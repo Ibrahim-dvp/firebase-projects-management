@@ -1,9 +1,14 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Models\UserGoogleAccount;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Foundation\Application;
+use App\Http\Controllers\ProfileController;
+
+use App\Http\Controllers\FirebaseProjectController;
+use App\Http\Controllers\UserGoogleAccountController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -15,13 +20,36 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    $googleAccounts = UserGoogleAccount::where('user_id', Auth::id())->get();
+    return Inertia::render('Dashboard', [
+        'googleAccounts' => $googleAccounts,
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    // profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // google account routes
+    Route::get('/auth/google', [UserGoogleAccountController::class, 'redirectToGoogle'])->name('google.redirect');
+    Route::get('/auth/google/callback', [UserGoogleAccountController::class, 'handleGoogleCallback'])->name('google.callback');
+    Route::delete('accounts/{id}', [UserGoogleAccountController::class, 'destroy'])->name('google.delete');
+
+
+    // Firebase Projects
+    Route::get('/projects', [FirebaseProjectController::class, 'index'])->name('projects.index');
+    Route::post('/google-accounts/{accountId}/add-firebase', [FirebaseProjectController::class, 'addFirebase']);
+
+
+    //firebase project users
+    Route::get('/users', function () {
+        return Inertia::render('Users');
+    })->name('users');
 });
 
-require __DIR__.'/auth.php';
+
+require __DIR__ . '/auth.php';

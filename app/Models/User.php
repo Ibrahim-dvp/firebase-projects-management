@@ -45,4 +45,10 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+
+    public function googleAccounts()
+    {
+        return $this->hasMany(UserGoogleAccount::class);
+    }
 }
