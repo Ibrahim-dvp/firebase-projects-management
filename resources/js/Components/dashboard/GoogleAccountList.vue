@@ -23,19 +23,15 @@ defineProps({
 const deleteAccount = (accountId) => {
     if (confirm("Are you sure you want to delete this account?")) {
         router.delete(`/accounts/${accountId}`, {
-            onSuccess: () => {
-                // Could use toast notification here
-            },
+            preserveState: true,
+            preserveScroll: true,
         });
     }
 };
 
 const fetchFirebaseProjects = (accountId) => {
-    router.visit(`/projects`, {
-        method: "get",
-        data: {
-            accountId,
-        },
+    router.post(`/projects`, {
+        accountId: accountId,
         preserveState: true,
         preserveScroll: true,
     });

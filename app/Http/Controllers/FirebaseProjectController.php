@@ -19,63 +19,30 @@ class FirebaseProjectController extends Controller
 
     public function index(Request $request)
     {
-        $accountId = $request->query('accountId');
         $user = $request->user();
-
-        // If accountId is provided, fetch projects for that account
+        $accountId = $request->input('accountId');
         if ($accountId) {
-            return $this->getProjects($request, $accountId);
+            $selectedAccountEmail = UserGoogleAccount::where('id', $accountId)->value('email');
         }
 
-        // Otherwise, fetch projects for all accounts
+
         $googleAccounts = $user->googleAccounts;
-        $allProjects = [];
+        $validatedAccounts = [];
 
         foreach ($googleAccounts as $googleAccount) {
             $validAccount = $this->getValidGoogleAccount($user, $googleAccount->id);
             if ($validAccount) {
-                $projects = $this->fetchFirebaseProjects($validAccount->access_token);
-                foreach ($projects as &$project) {
-                    $project['accountId'] = $googleAccount->id; // Add accountId to each project
-                }
-                $allProjects = array_merge($allProjects, $projects);
+                $validatedAccounts[] = [
+                    'id' => $googleAccount->id,
+                    'access_token' => $validAccount->access_token,
+                    'name' => $googleAccount->name,
+                    'email' => $googleAccount->email,
+                ];
             }
         }
-
         return Inertia::render('Projects', [
-            'projects' => $allProjects,
-            'googleAccounts' => $googleAccounts,
-        ]);
-    }
-
-    protected function fetchFirebaseProjects($accessToken)
-    {
-        $client = new \GuzzleHttp\Client();
-        $response = $client->get('https://firebase.googleapis.com/v1beta1/projects', [
-            'headers' => [
-                'Authorization' => "Bearer $accessToken",
-            ],
-        ]);
-
-        $data = json_decode($response->getBody(), associative: true);
-        return $data['results'] ?? [];
-    }
-
-    public function getProjects(Request $request, $accountId)
-    {
-        $user = $request->user();
-
-        $googleAccount = $this->getValidGoogleAccount($user, $accountId);
-
-        if (!$googleAccount) {
-            return Inertia::render('Projects', [
-                'token' => null,
-            ]);
-        }
-
-        return Inertia::render('Projects', [
-            'token' => $googleAccount->access_token,
-            'accountId' => $googleAccount->id // Pass account ID to frontend
+            'googleAccounts' => $validatedAccounts, // Pass validated accounts to the frontend
+            'selectedEmail' => $selectedAccountEmail ?? 'all', // Pass account ID to frontend
         ]);
     }
 
