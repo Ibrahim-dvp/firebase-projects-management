@@ -33,6 +33,8 @@ const formatDate = (date) => {
         day: "numeric",
     });
 };
+
+// console.log("Project data:", project);
 </script>
 <template>
     <Card class="hover:shadow-md transition-shadow">
@@ -118,7 +120,7 @@ const formatDate = (date) => {
             </div>
         </CardContent>
         <CardFooter class="border-t pt-3">
-            <Button variant="outline" size="sm" class="w-full">
+            <Button variant="outline" size="sm" class="w-full p-2">
                 View project details
             </Button>
         </CardFooter>

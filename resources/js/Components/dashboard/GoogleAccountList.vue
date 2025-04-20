@@ -73,7 +73,7 @@ const fetchFirebaseProjects = (accountId) => {
                 <TableCell>
                     <Badge
                         variant="outline"
-                        class="text-green-600 dark:text-green-400"
+                        class="text-green-600 dark:text-green-400 p-2"
                     >
                         <CheckIcon class="h-3 w-3 mr-1" />
                         Connected
@@ -85,7 +85,7 @@ const fetchFirebaseProjects = (accountId) => {
                             variant="outline"
                             size="sm"
                             @click="fetchFirebaseProjects(account.id)"
-                            class="gap-1"
+                            class="gap-1 p-2"
                         >
                             <FolderIcon class="h-3.5 w-3.5" />
                             Projects

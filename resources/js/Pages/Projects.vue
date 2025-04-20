@@ -5,21 +5,52 @@ import ProjectsAlert from "@/Components/projects/projectsAlert.vue";
 import EmptyProjectState from "@/Components/projects/EmptyProjectState.vue";
 import ProjectSkeleton from "@/Components/projects/ProjectSkeleton.vue";
 import ProjectList from "@/Components/projects/ProjectList.vue";
+import { Input } from "@/Components/ui/input"; // Import shadcn-vue Input component
+
 import { Head } from "@inertiajs/vue3";
 import { router } from "@inertiajs/vue3";
 
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 
 const props = defineProps({
     token: String,
+    projects: {
+        type: Array,
+        default: () => [],
+    },
+    googleAccounts: {
+        type: Array,
+        default: () => [],
+    },
 });
 
-const firebaseProjects = ref([]);
+const firebaseProjects = ref(props.projects || []);
+const selectedAccountId = ref(null);
+const searchQuery = ref(""); // New: Search query
 const isLoading = ref(false);
 const error = ref(null);
 
+const filteredProjects = computed(() => {
+    let projects = firebaseProjects.value;
+
+    if (selectedAccountId.value) {
+        projects = projects.filter(
+            (project) => project.accountId === selectedAccountId.value
+        );
+    }
+
+    if (searchQuery.value) {
+        projects = projects.filter((project) =>
+            project.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+        );
+    }
+
+    return projects;
+});
+
 const fetchProjects = async () => {
     if (!props.token) return;
+    console.log("Fetching projects...");
 
     isLoading.value = true;
     error.value = null;
@@ -51,7 +82,6 @@ const fetchProjects = async () => {
 
 const refreshProjects = () => {
     console.log("Refreshing projects...");
-
     fetchProjects();
 };
 
@@ -70,6 +100,19 @@ onMounted(() => {
         />
 
         <div class="space-y-6">
+            <!-- Search Bar -->
+            <div class="flex justify-between items-center">
+                <label for="search" class="text-sm font-medium">
+                    Search Projects:
+                </label>
+                <Input
+                    id="search"
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Search by project name"
+                    class="w-full max-w-md"
+                />
+            </div>
             <!-- Error Alert -->
             <ProjectsAlert v-if="error" :error="error" />
             <!-- Loading State -->
@@ -87,7 +130,7 @@ onMounted(() => {
                 class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
             >
                 <ProjectList
-                    v-for="project in firebaseProjects"
+                    v-for="project in filteredProjects"
                     :key="project.projectId"
                     :project="project"
                 />

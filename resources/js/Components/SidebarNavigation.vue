@@ -131,10 +131,8 @@ const getInitials = (name) => {
                 class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground w-full"
                 :class="{ 'justify-center': isCollapsed }"
             >
-                <Avatar class="h-7 w-7 flex-shrink-0">
-                    <AvatarFallback>{{
-                        user.name.charAt(0) + user.name.charAt(1)
-                    }}</AvatarFallback>
+                <Avatar class="h-7 w-7 flex-shrink-0 bg-gray-700">
+                    <AvatarFallback>{{ user.name.charAt(0) }}</AvatarFallback>
                 </Avatar>
                 <div v-if="!isCollapsed" class="flex-1 min-w-0">
                     <p class="truncate font-medium">{{ user.name }}</p>

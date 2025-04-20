@@ -7,10 +7,11 @@ import GoogleAccountHead from "@/Components/dashboard/GoogleAccountHead.vue";
 import DashboardHead from "@/Components/dashboard/DashboardHead.vue";
 
 import { Head } from "@inertiajs/vue3";
+import { router } from "@inertiajs/vue3";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent } from "@/Components/ui/card";
 
-defineProps({
+const props = defineProps({
     googleAccounts: {
         type: Array,
         required: true,
@@ -24,6 +25,23 @@ defineProps({
 const linkGoogleAccount = () => {
     window.location.href = "/auth/google";
 };
+
+const refreshGoogleAccounts = () => {
+    router.get(
+        "/dashboard",
+        {},
+        {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: (page) => {
+                console.log(
+                    "Google accounts refreshed:",
+                    page.props.googleAccounts
+                );
+            },
+        }
+    );
+};
 </script>
 
 <template>
@@ -31,12 +49,15 @@ const linkGoogleAccount = () => {
         <Head title="Google Accounts" />
         <DashboardHead
             :isLoading="isLoading"
-            @linkGoogleAccount="linkGoogleAccount"
+            @linkGoogleAccount="refreshGoogleAccounts"
         />
         <div class="space-y-6">
             <Card>
                 <CardContent>
-                    <GoogleAccountHead @linkGoogleAccount="linkGoogleAccount" />
+                    <GoogleAccountHead
+                        v-if="googleAccounts.length > 0"
+                        @linkGoogleAccount="linkGoogleAccount"
+                    />
                     <!-- Loading State -->
                     <GoogleAccountSkeleton v-if="isLoading" />
 

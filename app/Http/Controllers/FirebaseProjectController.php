@@ -16,28 +16,55 @@ class FirebaseProjectController extends Controller
     /**
      * Display a listing of the resource.
      */
-    // public function index(Request $request)
-    // {
-    //     $user = $request->user();
-    //     // Get the first Google account for the user
-    //     $googleAccount = $user->googleAccounts()->first();
-    //     $token = $googleAccount->access_token ?? null;
-    //     return Inertia::render('Projects', [
-    //         'token' => $token
-    //     ]);
-    // }
 
     public function index(Request $request)
     {
         $accountId = $request->query('accountId');
-        return $this->getProjects($request, $accountId);
+        $user = $request->user();
+
+        // If accountId is provided, fetch projects for that account
+        if ($accountId) {
+            return $this->getProjects($request, $accountId);
+        }
+
+        // Otherwise, fetch projects for all accounts
+        $googleAccounts = $user->googleAccounts;
+        $allProjects = [];
+
+        foreach ($googleAccounts as $googleAccount) {
+            $validAccount = $this->getValidGoogleAccount($user, $googleAccount->id);
+            if ($validAccount) {
+                $projects = $this->fetchFirebaseProjects($validAccount->access_token);
+                foreach ($projects as &$project) {
+                    $project['accountId'] = $googleAccount->id; // Add accountId to each project
+                }
+                $allProjects = array_merge($allProjects, $projects);
+            }
+        }
+
+        return Inertia::render('Projects', [
+            'projects' => $allProjects,
+            'googleAccounts' => $googleAccounts,
+        ]);
+    }
+
+    protected function fetchFirebaseProjects($accessToken)
+    {
+        $client = new \GuzzleHttp\Client();
+        $response = $client->get('https://firebase.googleapis.com/v1beta1/projects', [
+            'headers' => [
+                'Authorization' => "Bearer $accessToken",
+            ],
+        ]);
+
+        $data = json_decode($response->getBody(), associative: true);
+        return $data['results'] ?? [];
     }
 
     public function getProjects(Request $request, $accountId)
     {
         $user = $request->user();
 
-        // Get the account with token refresh if needed
         $googleAccount = $this->getValidGoogleAccount($user, $accountId);
 
         if (!$googleAccount) {
