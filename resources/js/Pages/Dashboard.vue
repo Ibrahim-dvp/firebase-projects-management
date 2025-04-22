@@ -10,6 +10,7 @@ import { Head } from "@inertiajs/vue3";
 import { router } from "@inertiajs/vue3";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent } from "@/Components/ui/card";
+import { useToast } from "@/Components/ui/toast/use-toast";
 
 const props = defineProps({
     googleAccounts: {
@@ -20,7 +21,19 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    error: {
+        type: String,
+        default: null,
+    },
 });
+const { toast } = useToast();
+if (props.error) {
+    toast({
+        title: "Error",
+        description: props.error,
+        variant: "destructive",
+    });
+}
 
 const linkGoogleAccount = () => {
     window.location.href = "/auth/google";

@@ -37,15 +37,6 @@ const navItems = [
     },
     { name: "Users", href: "users", icon: UsersIcon },
 ];
-
-// Generate initials from user name
-const getInitials = (name) => {
-    return name
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase();
-};
 </script>
 
 <template>

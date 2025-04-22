@@ -1,4 +1,8 @@
 <script setup>
+import { ref, computed } from "vue";
+import { useToast } from "@/Components/ui/toast/use-toast";
+import { Button } from "@/Components/ui/button";
+import { Badge } from "@/Components/ui/badge";
 import {
     Card,
     CardContent,
@@ -7,8 +11,6 @@ import {
     CardDescription,
     CardFooter,
 } from "@/Components/ui/card";
-import { Button } from "@/Components/ui/button";
-import { Badge } from "@/Components/ui/badge";
 import {
     CheckCircleIcon,
     CuboidIcon,
@@ -17,15 +19,112 @@ import {
     GlobeIcon,
     CalendarIcon,
 } from "lucide-vue-next";
+import ConfirmDialog from "./ConfirmDialog.vue";
+import EditProjectDialog from "./EditProjectDialog.vue";
+import axios from "axios";
 
-defineProps({
+const props = defineProps({
     project: {
         type: Object,
         required: true,
     },
+    googleAccounts: {
+        type: Array,
+        default: () => [],
+    },
 });
 
-// Format creation date (mock - replace with actual date from API if available)
+const emit = defineEmits(["update:open", "refreshProjects"]);
+const { toast } = useToast();
+
+const editOpen = ref(false);
+const deleteOpen = ref(false);
+const processingToast = ref(null);
+
+const selectedProject = ref({
+    displayName: props.project.displayName,
+    projectId: props.project.projectId,
+});
+
+const accountToken = computed(
+    () =>
+        props.googleAccounts.find(
+            (acc) => acc.email === props.project.accountEmail
+        )?.access_token
+);
+
+const handleEditSuccess = () => {
+    if (processingToast.value) {
+        processingToast.value.dismiss();
+        processingToast.value = null;
+    }
+    toast({ title: "Success", description: "Project updated successfully" });
+    setTimeout(() => {
+        emit("refreshProjects");
+    }, 12000);
+};
+
+const handleEditError = (error) => {
+    if (processingToast.value) {
+        processingToast.value.dismiss();
+        processingToast.value = null;
+    }
+    toast({
+        title: "Error",
+        description: error.message || "Failed to update project",
+        variant: "destructive",
+    });
+};
+
+const handleProjectEdited = () => {
+    processingToast.value = toast({
+        title: "Processing",
+        description: "Updating your Firebase project...",
+        variant: "default",
+        duration: Infinity,
+    });
+};
+
+const handleDelete = async () => {
+    handleProjectEdited();
+    if (!accountToken.value) {
+        handleEditError({
+            message: "No access token found for the project.",
+        });
+        return;
+    }
+    try {
+        await axios.delete(
+            `https://cloudresourcemanager.googleapis.com/v1/projects/${props.project.projectId}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${accountToken.value}`,
+                },
+            }
+        );
+        if (processingToast.value) {
+            processingToast.value.dismiss();
+            processingToast.value = null;
+            toast({
+                title: "Success",
+                description: `Project ${props.project.projectId} deletion requested successfully.`,
+            });
+            setTimeout(() => {
+                emit("refreshProjects");
+            }, 30000);
+        }
+    } catch (error) {
+        console.error("Error deleting project:", error);
+        toast({
+            title: "Error",
+            description: "Failed to delete the project.",
+            variant: "destructive",
+        });
+    } finally {
+        deleteOpen.value = false;
+    }
+};
+
 const formatDate = (date) => {
     return new Date(date).toLocaleDateString("en-US", {
         year: "numeric",
@@ -33,8 +132,6 @@ const formatDate = (date) => {
         day: "numeric",
     });
 };
-
-// console.log("Project data:", project);
 </script>
 <template>
     <Card class="hover:shadow-md transition-shadow">
@@ -119,10 +216,35 @@ const formatDate = (date) => {
                 </div>
             </div>
         </CardContent>
-        <CardFooter class="border-t pt-3">
-            <Button variant="outline" size="sm" class="w-full p-2">
-                View project details
+        <CardFooter class="border-t pt-3 space-x-2">
+            <Button size="sm" class="w-full p-2" @click="editOpen = true">
+                Edit Project
+            </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                class="w-full p-2"
+                @click="deleteOpen = true"
+            >
+                Delete Project
             </Button>
         </CardFooter>
+        <EditProjectDialog
+            :open="editOpen"
+            :project="selectedProject"
+            :account-token="accountToken"
+            @processing="handleProjectEdited"
+            @success="handleEditSuccess"
+            @error="handleEditError"
+            @update:open="editOpen = $event"
+        />
+
+        <ConfirmDialog
+            :open="deleteOpen"
+            title="Delete this project?"
+            description="This action cannot be undone."
+            @confirm="handleDelete"
+            @update:open="deleteOpen = $event"
+        />
     </Card>
 </template>

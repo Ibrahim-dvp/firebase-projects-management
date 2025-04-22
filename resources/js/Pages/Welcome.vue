@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link } from "@inertiajs/vue3";
+import { onMounted, ref } from "vue";
 
 defineProps({
     canLogin: {
@@ -17,13 +18,19 @@ defineProps({
         required: true,
     },
 });
+const isDark = ref(false);
 
 function handleImageError() {
-    document.getElementById('screenshot-container')?.classList.add('!hidden');
-    document.getElementById('docs-card')?.classList.add('!row-span-1');
-    document.getElementById('docs-card-content')?.classList.add('!flex-row');
-    document.getElementById('background')?.classList.add('!hidden');
+    document.getElementById("screenshot-container")?.classList.add("!hidden");
+    document.getElementById("docs-card")?.classList.add("!row-span-1");
+    document.getElementById("docs-card-content")?.classList.add("!flex-row");
+    document.getElementById("background")?.classList.add("!hidden");
 }
+
+onMounted(() => {
+    isDark.value = localStorage.getItem("darkMode") === "true";
+    document.documentElement.classList.toggle("dark", isDark.value);
+});
 </script>
 
 <template>

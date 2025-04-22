@@ -17,7 +17,13 @@ class UserGoogleAccountController extends Controller
     public function redirectToGoogle()
     {
         return Socialite::driver('google')
-            ->scopes(['https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/firebase'])
+            ->scopes([
+                'https://www.googleapis.com/auth/cloud-platform',
+                'https://www.googleapis.com/auth/firebase',
+                'https://www.googleapis.com/auth/cloudplatformprojects',
+                'https://www.googleapis.com/auth/cloudplatformprojects.readonly'
+            ])
+            // ->scopes(['https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/firebase'])
             ->with([
                 'access_type' => 'offline', // This is crucial
                 'prompt' => 'consent', // Force consent every time (for testing)

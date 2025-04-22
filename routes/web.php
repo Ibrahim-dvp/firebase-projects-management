@@ -43,7 +43,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Firebase Projects
     Route::get('/projects', [FirebaseProjectController::class, 'index'])->name('projects.index');
     Route::post('/projects', [FirebaseProjectController::class, 'index'])->name('projects.get');
-    Route::post('/google-accounts/{accountId}/add-firebase', [FirebaseProjectController::class, 'addFirebase']);
 
 
     //firebase project users

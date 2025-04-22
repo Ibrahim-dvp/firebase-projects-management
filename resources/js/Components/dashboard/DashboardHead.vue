@@ -29,7 +29,7 @@ const props = defineProps({
             >
                 <RefreshCcwIcon
                     class="w-4 h-4 mr-2"
-                    :class="{ 'animate-spin': isLoading }"
+                    :class="{ 'animate-spin': props.isLoading }"
                 />
                 Refresh
             </Button>

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import SidebarNavigation from "@/Components/SidebarNavigation.vue";
+import { Toaster } from "@/Components/ui/toast";
 
 // Dark mode state
 const isDark = ref(false);
@@ -26,6 +27,7 @@ onMounted(() => {
 </script>
 
 <template>
+    <Toaster />
     <div class="flex h-screen overflow-hidden bg-background text-foreground">
         <!-- Fixed Sidebar - Narrower Width -->
         <aside

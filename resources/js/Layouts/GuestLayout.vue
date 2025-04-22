@@ -1,6 +1,14 @@
 <script setup>
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { Link } from '@inertiajs/vue3';
+import ApplicationLogo from "@/Components/ApplicationLogo.vue";
+import { Link } from "@inertiajs/vue3";
+import { onMounted, ref } from "vue";
+
+const isDark = ref(false);
+
+onMounted(() => {
+    isDark.value = localStorage.getItem("darkMode") === "true";
+    document.documentElement.classList.toggle("dark", isDark.value);
+});
 </script>
 
 <template>

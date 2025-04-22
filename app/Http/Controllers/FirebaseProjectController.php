@@ -6,8 +6,6 @@ use App\Models\UserGoogleAccount;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\FirebaseProject;
-use App\Http\Requests\StoreFirebaseProjectRequest;
-use App\Http\Requests\UpdateFirebaseProjectRequest;
 use Google\Client;
 
 class FirebaseProjectController extends Controller
@@ -24,11 +22,8 @@ class FirebaseProjectController extends Controller
         if ($accountId) {
             $selectedAccountEmail = UserGoogleAccount::where('id', $accountId)->value('email');
         }
-
-
         $googleAccounts = $user->googleAccounts;
         $validatedAccounts = [];
-
         foreach ($googleAccounts as $googleAccount) {
             $validAccount = $this->getValidGoogleAccount($user, $googleAccount->id);
             if ($validAccount) {
