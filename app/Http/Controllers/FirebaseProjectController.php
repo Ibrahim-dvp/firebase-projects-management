@@ -93,27 +93,4 @@ class FirebaseProjectController extends Controller
         $client->setClientSecret(config('services.google.client_secret'));
         return $client;
     }
-
-
-    public function addFirebase(Request $request, $accountId)
-    {
-        $request->validate([
-            'project_id' => 'required|string',
-        ]);
-
-        $user = $request->user();
-        $googleAccount = $user->googleAccounts()->findOrFail($accountId);
-
-        // Create a new FirebaseProject instance
-        $firebaseProject = new FirebaseProject();
-        $firebaseProject->project_id = $request->project_id;
-        $firebaseProject->google_account_id = $googleAccount->id;
-
-        // Save the project to the database
-        if ($firebaseProject->save()) {
-            return response()->json(['success' => true, 'message' => 'Firebase project added successfully.']);
-        } else {
-            return response()->json(['success' => false, 'message' => 'Failed to add Firebase project.'], 500);
-        }
-    }
 }

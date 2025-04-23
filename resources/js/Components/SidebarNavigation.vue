@@ -9,6 +9,8 @@ import {
 import { Separator } from "@/Components/ui/separator";
 import { Switch } from "@/Components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/Components/ui/avatar";
+import { Button } from "@/Components/ui/button";
+
 import {
     HomeIcon,
     UsersIcon,
@@ -18,6 +20,7 @@ import {
     MoonIcon,
     SunIcon,
     Folder,
+    LogOutIcon,
 } from "lucide-vue-next";
 
 const props = defineProps({
@@ -123,7 +126,9 @@ const navItems = [
                 :class="{ 'justify-center': isCollapsed }"
             >
                 <Avatar class="h-7 w-7 flex-shrink-0 bg-gray-700">
-                    <AvatarFallback>{{ user.name.charAt(0) }}</AvatarFallback>
+                    <AvatarFallback class="text-white">{{
+                        user.name.charAt(0)
+                    }}</AvatarFallback>
                 </Avatar>
                 <div v-if="!isCollapsed" class="flex-1 min-w-0">
                     <p class="truncate font-medium">{{ user.name }}</p>
@@ -132,6 +137,21 @@ const navItems = [
                     </p>
                 </div>
             </Link>
+            <!-- Logout Button -->
+            <form
+                @submit.prevent="$inertia.post(route('logout'))"
+                class="w-full"
+            >
+                <Button
+                    type="submit"
+                    variant="ghost"
+                    class="w-full justify-start gap-2 px-2 py-1.5 h-auto text-sm hover:bg-accent hover:text-accent-foreground"
+                    :class="{ 'justify-center': isCollapsed }"
+                >
+                    <LogOutIcon class="h-4 w-4 flex-shrink-0" />
+                    <span v-if="!isCollapsed">Sign out</span>
+                </Button>
+            </form>
         </div>
     </div>
 </template>

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\ProfileController;
 
+use App\Http\Controllers\FirebaseUserController;
 use App\Http\Controllers\FirebaseProjectController;
 use App\Http\Controllers\UserGoogleAccountController;
 
@@ -46,9 +47,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
     //firebase project users
-    Route::get('/users', function () {
-        return Inertia::render('Users');
-    })->name('users');
+    Route::get('/users', [FirebaseUserController::class, 'index'])
+        ->name('users');
+    // Route::get('/users', function () {
+    //     return Inertia::render('Users');
+    // })->name('users');
 });
 
 

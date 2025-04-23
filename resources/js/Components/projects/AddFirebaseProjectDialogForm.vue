@@ -53,21 +53,16 @@ const isLoading = ref(false);
 const onSubmit = handleSubmit(async (values) => {
     try {
         handleProjectAdded();
-        // isLoading.value = true;
-
         const account = props.googleAccounts.find(
             (acc) => acc.id === values.accountId
         );
         if (!account) throw new Error("Selected account not found");
-
         emit("update:open", false);
-        // Use composable to create project
-        // console.log("Creating project with values:", values);
-        // console.log("Account:", account);
         const result = await createProject(account, {
             projectId: values.projectId,
             displayName: values.displayName,
         });
+        // console.log("Project created:", result);
         if (result.success) {
             handleSuccess();
             console.log(result);
@@ -99,16 +94,15 @@ const handleSuccess = () => {
     if (processingToast.value) {
         processingToast.value.dismiss();
         processingToast.value = null;
-        // processingToast.value.duration = 0;
     }
     toast({
         title: "Success",
         description: "Firebase project created successfully",
         variant: "success",
     });
-    // setTimeout(() => {
-    //     emit("refreshProjects");
-    // }, 7000);
+    setTimeout(() => {
+        emit("refreshProjects");
+    }, 7000);
 };
 
 const handleError = (error) => {
