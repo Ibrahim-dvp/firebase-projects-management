@@ -5,9 +5,8 @@ namespace App\Http\Controllers;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Factory;
+use App\Jobs\ImportFirebaseUsers;
 use Kreait\Firebase\Contract\Auth;
-use Kreait\Firebase\ServiceAccount;
-use Kreait\Laravel\Firebase\Facades\Firebase;
 
 class FirebaseUserController extends Controller
 {
@@ -136,5 +135,24 @@ class FirebaseUserController extends Controller
                 'message' => 'Failed to create user: ' . $e->getMessage(),
             ]);
         }
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'users' => 'required|array',
+            'users.*.email' => 'required|email',
+            'users.*.password' => 'required|min:6',
+        ]);
+
+        $chunks = array_chunk($request->input('users'), 500);
+        foreach ($chunks as $chunk) {
+            ImportFirebaseUsers::dispatch($chunk, $request->input('sendEmailVerification', false));
+        }
+
+        return redirect()->back()->with('toast', [
+            'type' => 'success',
+            'message' => 'Import started! You will be notified when it is done.',
+        ]);
     }
 }

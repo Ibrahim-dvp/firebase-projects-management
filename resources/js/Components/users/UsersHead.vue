@@ -84,13 +84,13 @@ const handleFileUpload = (event) => {
                     );
                 }
 
-                const response = await router.post(route("users.import"), {
+                const response = router.post(route("users.import"), {
                     users: validUsers,
                 });
 
                 toast({
                     title: "Success",
-                    description: `Imported ${validUsers.length} users successfully!`,
+                    description: `Importing of ${validUsers.length} users...! `,
                 });
             } catch (error) {
                 toast({

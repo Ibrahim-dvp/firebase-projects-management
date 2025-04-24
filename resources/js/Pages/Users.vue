@@ -84,18 +84,6 @@ const refreshUsers = async () => {
         isLoading.value = false;
     }
 };
-
-const addUser = async () => {
-    isLoading.value = true;
-    try {
-        router.get(route("users.create"), {
-            preserveState: true,
-            replace: true,
-        });
-    } finally {
-        isLoading.value = false;
-    }
-};
 </script>
 
 <template>

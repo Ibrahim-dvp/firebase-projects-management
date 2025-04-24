@@ -55,7 +55,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('users.store');
 
     Route::post('/users/import', [FirebaseUserController::class, 'import'])
-        ->middleware(['auth', 'throttle:firebase-imports'])
         ->name('users.import');
 });
 
