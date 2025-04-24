@@ -38,7 +38,7 @@ const navItems = [
         href: "projects.index",
         icon: Folder,
     },
-    { name: "Users", href: "users", icon: UsersIcon },
+    { name: "Users", href: "users.index", icon: UsersIcon },
 ];
 </script>
 

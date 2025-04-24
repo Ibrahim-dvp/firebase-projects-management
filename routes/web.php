@@ -12,22 +12,19 @@ use App\Http\Controllers\FirebaseProjectController;
 use App\Http\Controllers\UserGoogleAccountController;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    // return Inertia::render('Welcome', [
+    //     'canLogin' => Route::has('login'),
+    //     'canRegister' => Route::has('register'),
+    // ]);
+    return redirect()->route('login');
 });
 
-Route::get('/dashboard', function () {
-    $googleAccounts = UserGoogleAccount::where('user_id', Auth::id())->get();
-    return Inertia::render('Dashboard', [
-        'googleAccounts' => $googleAccounts,
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-
+// Route::get('/dashboard', function () {
+//     $googleAccounts = UserGoogleAccount::where('user_id', Auth::id())->get();
+//     return Inertia::render('Dashboard', [
+//         'googleAccounts' => $googleAccounts,
+//     ]);
+// })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // profile routes
@@ -40,7 +37,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/auth/google/callback', [UserGoogleAccountController::class, 'handleGoogleCallback'])->name('google.callback');
     Route::delete('accounts/{id}', [UserGoogleAccountController::class, 'destroy'])->name('google.delete');
 
-
+    Route::get('/dashboard', function () {
+        $googleAccounts = UserGoogleAccount::where('user_id', Auth::id())->get();
+        return Inertia::render('Dashboard', [
+            'googleAccounts' => $googleAccounts,
+        ]);
+    })->name('dashboard');
     // Firebase Projects
     Route::get('/projects', [FirebaseProjectController::class, 'index'])->name('projects.index');
     Route::post('/projects', [FirebaseProjectController::class, 'index'])->name('projects.get');
@@ -48,10 +50,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //firebase project users
     Route::get('/users', [FirebaseUserController::class, 'index'])
-        ->name('users');
-    // Route::get('/users', function () {
-    //     return Inertia::render('Users');
-    // })->name('users');
+        ->name('users.index');
+    Route::post('/users', [FirebaseUserController::class, 'store'])
+        ->name('users.store');
+
+    Route::post('/users/import', [FirebaseUserController::class, 'import'])
+        ->middleware(['auth', 'throttle:firebase-imports'])
+        ->name('users.import');
 });
 
 

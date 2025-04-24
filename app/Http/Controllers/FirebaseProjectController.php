@@ -35,6 +35,7 @@ class FirebaseProjectController extends Controller
                 ];
             }
         }
+
         return Inertia::render('Projects', [
             'googleAccounts' => $validatedAccounts, // Pass validated accounts to the frontend
             'selectedEmail' => $selectedAccountEmail ?? 'all', // Pass account ID to frontend

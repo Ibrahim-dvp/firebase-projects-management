@@ -78,7 +78,6 @@ const fetchFirebaseProjects = (accountId) => {
                 <TableCell>
                     <div class="flex gap-2">
                         <Button
-                            variant="outline"
                             size="sm"
                             @click="fetchFirebaseProjects(account.id)"
                             class="gap-1 p-2"
@@ -87,10 +86,10 @@ const fetchFirebaseProjects = (accountId) => {
                             Projects
                         </Button>
                         <Button
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
                             @click="deleteAccount(account.id)"
-                            class="gap-1"
+                            class="gap-1 bg-red-700 hover:bg-red-500 text-white hover:text-white"
                         >
                             <TrashIcon class="h-3.5 w-3.5" />
                             Remove

@@ -40,6 +40,8 @@ const loadProjects = async () => {
 
 // Lifecycle
 onMounted(() => {
+    console.log(props.googleAccounts);
+
     loadProjects();
 });
 

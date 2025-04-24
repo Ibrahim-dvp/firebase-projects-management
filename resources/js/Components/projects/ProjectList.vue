@@ -150,7 +150,7 @@ const formatDate = (date) => {
                 </div>
                 <Badge
                     variant="outline"
-                    class="flex items-center"
+                    class="flex items-center p-1"
                     :class="{
                         'text-green-600 dark:text-green-400':
                             project.state === 'ACTIVE',
