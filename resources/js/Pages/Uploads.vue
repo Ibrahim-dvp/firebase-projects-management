@@ -123,28 +123,26 @@ const submitUserImport = (event) => {
         userImportForm.errors.csv_file = "CSV file is required";
         return;
     }
-
     userImportForm.post(route("users.import"), {
         preserveScroll: true,
         onSuccess: () => {
             // Reset form on success
             userImportForm.reset();
             if (csvFileInput.value) csvFileInput.value.value = "";
-        },
-        onError: () => {
             toast({
-                type: "error",
-                message: "error importing",
+                title: "Success",
+                description: "Users Addes!",
+            });
+        },
+        onError: (errors) => {
+            toast({
+                title: "error",
+                message: errors,
             });
         },
     });
 };
 
-// const submitUserImport = () => {
-//     userImportForm.post(route("users.import"), {
-//         onSuccess: () => userImportForm.reset(),
-//     });
-// };
 watch(
     () => serviceAccountForm.project_id,
     (newProjectId) => {

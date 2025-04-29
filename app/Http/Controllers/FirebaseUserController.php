@@ -23,14 +23,12 @@ class FirebaseUserController extends Controller
     private function loadAuth($projectId = null)
     {
         if ($projectId) {
-            // dump('first');
             $project = FirebaseProject::where('project_id', $projectId)->first();
             if ($project) {
                 $path = storage_path("app/private/{$project->credentials_path}");
                 return (new Factory)->withServiceAccount($path)->createAuth();
             }
         } else {
-            // dump('second');
             $defaultPath = base_path(env('FIREBASE_CREDENTIALS'));
             if (!file_exists($defaultPath)) {
                 throw new \Exception('Firebase credentials file not found');
@@ -43,7 +41,6 @@ class FirebaseUserController extends Controller
 
     public function index(Request $request)
     {
-        // dump('thirs');
         $perPage = 50;
         $page = $request->input('page', 1);
         $projectId = $request->input('project');
@@ -194,41 +191,36 @@ class FirebaseUserController extends Controller
         ]);
 
         try {
-            // 1. Process CSV and prepare data
-
-            // 2. Create temp directory if needed
-            $csvPath = $request->file('csv_file')->store('temp-imports');
-            $absoluteCsvPath = storage_path('app/' . $csvPath);
-
-            // 4. Build and execute command
-            $command = sprintf(
-                'firebase auth:import %s --project=%s --hash-algo=SCRYPT --rounds=8 --mem-cost=14 --hash-key=%s --salt-separator=%s',
-                $absoluteCsvPath,
-                $request->target_project_id,
-                'YcIQUaHlZbBdcb08BeO3WzTu47WO/sOJFDZwNfv6tqGG1NCH3IDw6irsWm1QpCHTNvVG/NbXy4HakBAmy8vbnQ==',
-                'Bw=='
+            $file = $request->file('csv_file');
+            $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
+            $relativePath = $file->storeAs(
+                'temp-imports',
+                $filename,
+                'local'
             );
-
-
+            $csvPath = storage_path("app/private/{$relativePath}");
+            // firebase auth:import testCsv.csv  --project test4-77hgj
+            $command = sprintf(
+                'firebase auth:import %s --project %s ',
+                $csvPath,
+                $request->target_project_id,
+            );
             exec($command . ' 2>&1', $output, $returnVar);
 
             // 5. Handle result
             if ($returnVar === 0) {
-                dd('gg');
                 return back()->with('success', 'Users imported successfully!');
             } else {
-                dd($output);
+                return back()->with('erros', $output);
             }
 
             // return back()->with('error', $this->parseFirebaseError($output));
         } catch (\Exception $e) {
-            dd($e);
-
             return back()->with('error', $e->getMessage());
         } finally {
             // Clean up
-            if (isset($jsonPath) && file_exists($jsonPath)) {
-                // unlink($jsonPath);
+            if (isset($csvPath) && file_exists($csvPath)) {
+                unlink($csvPath);
             }
         }
     }
