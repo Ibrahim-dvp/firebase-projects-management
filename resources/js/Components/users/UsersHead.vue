@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { PlusIcon, RefreshCwIcon, FileInputIcon } from "lucide-vue-next";
 import { Button } from "@/Components/ui/button";
 import {
@@ -17,16 +17,14 @@ import { useForm } from "vee-validate";
 import { object, string, boolean } from "yup";
 import { useToast } from "@/Components/ui/toast/use-toast";
 import { router } from "@inertiajs/vue3";
-import { parse } from "papaparse";
 
 const { toast } = useToast();
 const isOpen = ref(false);
-const fileInput = ref(null);
 
-defineProps({
+const props = defineProps({
     isLoading: Boolean,
+    selectedProjectId: String,
 });
-
 const { errors, handleSubmit, defineField, resetForm } = useForm({
     validationSchema: object({
         email: string()
@@ -36,17 +34,33 @@ const { errors, handleSubmit, defineField, resetForm } = useForm({
             .required("Password is required")
             .min(6, "Password must be at least 6 characters"),
         sendEmailVerification: boolean(),
+        project: string().required(), // Add project to validation schema
     }),
 });
 
 const [email, emailAttrs] = defineField("email");
 const [password, passwordAttrs] = defineField("password");
+const [project] = defineField("project"); // Define the project field
+
+// Set the project value when selectedProjectId changes
+watch(
+    () => props.selectedProjectId,
+    (newVal) => {
+        project.value = newVal;
+    },
+    { immediate: true }
+);
 const onSubmit = handleSubmit(async (values) => {
     try {
         router.post(route("users.store"), values, {
             onSuccess: () => {
                 isOpen.value = false;
                 resetForm();
+                toast({
+                    title: "success",
+                    description: "User Added!",
+                    variant: "default",
+                });
             },
             onError: (errors) => {
                 toast({
@@ -65,55 +79,7 @@ const onSubmit = handleSubmit(async (values) => {
     }
 });
 
-const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: async (results) => {
-            try {
-                const validUsers = results.data.filter(
-                    (row) => row.email && row.password
-                );
-
-                if (validUsers.length === 0) {
-                    throw new Error(
-                        "CSV file must contain email and password columns"
-                    );
-                }
-
-                const response = router.post(route("users.import"), {
-                    users: validUsers,
-                });
-
-                toast({
-                    title: "Success",
-                    description: `Importing of ${validUsers.length} users...! `,
-                });
-            } catch (error) {
-                toast({
-                    title: "Error",
-                    description: error.message,
-                    variant: "destructive",
-                });
-            } finally {
-                // Reset file input
-                if (fileInput.value) fileInput.value.value = "";
-            }
-        },
-        error: (error) => {
-            toast({
-                title: "CSV Error",
-                description: error.message,
-                variant: "destructive",
-            });
-        },
-    });
-};
-
-defineEmits(["refreshUsers", "addUser"]);
+defineEmits(["refreshUsers"]);
 </script>
 
 <template>
@@ -136,21 +102,6 @@ defineEmits(["refreshUsers", "addUser"]);
                 />
                 Refresh
             </Button>
-
-            <Button variant="outline" size="sm" asChild>
-                <Label for="csv-upload">
-                    <FileInputIcon class="h-4 w-4 mr-2" />
-                    Import CSV
-                    <input
-                        id="csv-upload"
-                        ref="fileInput"
-                        type="file"
-                        accept=".csv"
-                        class="hidden"
-                        @change="handleFileUpload"
-                    />
-                </Label>
-            </Button>
             <Dialog v-model:open="isOpen">
                 <DialogTrigger as-child>
                     <Button size="sm">
@@ -172,6 +123,12 @@ defineEmits(["refreshUsers", "addUser"]);
                     </DialogDescription>
 
                     <form @submit="onSubmit" class="space-y-4">
+                        <input
+                            type="hidden"
+                            name="project"
+                            :value="selectedProjectId"
+                        />
+
                         <div class="space-y-2">
                             <Label for="email">Email</Label>
                             <Input

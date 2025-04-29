@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UserGoogleAccount;
+use Google\Client;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Models\FirebaseProject;
-use Google\Client;
+use App\Models\UserGoogleAccount;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class FirebaseProjectController extends Controller
 {
@@ -14,6 +16,8 @@ class FirebaseProjectController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+
 
     public function index(Request $request)
     {
@@ -42,7 +46,6 @@ class FirebaseProjectController extends Controller
         ]);
     }
 
-
     protected function getValidGoogleAccount($user, $accountId = null)
     {
         // Get the specified account or first available
@@ -53,17 +56,24 @@ class FirebaseProjectController extends Controller
         if (!$account) {
             return null;
         }
-
         return $this->refreshTokenIfNeeded($account);
     }
 
     protected function refreshTokenIfNeeded($googleAccount)
     {
         if ($this->tokenNeedsRefresh($googleAccount)) {
-            $client = $this->createGoogleClient();
-
+            $client = $this->createGoogleClient($googleAccount);
             try {
-                $client->refreshToken($googleAccount->refresh_token);
+                if ($googleAccount->access_token) {
+                    $client->setAccessToken([
+                        'access_token' => $googleAccount->access_token,
+                        'refresh_token' => $googleAccount->refresh_token,
+                        'expires_in' => $googleAccount->expires_at->diffInSeconds(now()),
+                    ]);
+                }
+
+                $client->fetchAccessTokenWithRefreshToken($googleAccount->refresh_token);
+
                 $newToken = $client->getAccessToken();
 
                 $googleAccount->update([
@@ -73,8 +83,8 @@ class FirebaseProjectController extends Controller
 
                 return $googleAccount->fresh();
             } catch (\Exception $e) {
-                report($e); // Log the error
-                return null;
+                throw new \Exception($e); // Log the error
+                // return null;
             }
         }
 
@@ -87,11 +97,102 @@ class FirebaseProjectController extends Controller
             now()->addMinutes(5)->gte($googleAccount->expires_at);
     }
 
-    protected function createGoogleClient()
+    protected function createGoogleClient($googleAccount): Client
     {
         $client = new Client();
         $client->setClientId(config('services.google.client_id'));
         $client->setClientSecret(config('services.google.client_secret'));
+        $client->setRedirectUri(config('services.google.redirect')); // Make sure this is set
+        $client->setPrompt('consent');
+        $client->setAccessType('offline'); // Required to get refresh tokens
+        $client->setApprovalPrompt('force'); // Sometimes needed for first authorization
+        $client->addScope('https://www.googleapis.com/auth/firebase');
+        $client->addScope('https://www.googleapis.com/auth/cloud-platform');
+
+        if ($googleAccount->access_token) {
+            $client->setAccessToken($googleAccount->access_token);
+        }
+
         return $client;
+    }
+
+    public function create(Request $request)
+    {
+        $user = $request->user();
+        $googleAccounts = $user->googleAccounts;
+        foreach ($googleAccounts as $googleAccount) {
+            $validAccount = $this->getValidGoogleAccount($user, $googleAccount->id);
+            if ($validAccount) {
+                $validatedAccounts[] = [
+                    'id' => $googleAccount->id,
+                    'access_token' => $validAccount->access_token,
+                    'name' => $googleAccount->name,
+                    'email' => $googleAccount->email,
+                ];
+            }
+        }
+
+        return Inertia::render('Uploads', [
+            'googleAccounts' => $validatedAccounts,
+            'firebaseProjects' => FirebaseProject::all(),
+
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+
+        $validated = $request->validate([
+            'email' => 'required|email|string',
+            'display_name' => 'required|string|max:255',
+            'project_id' => 'required|string|max:255|unique:firebase_projects,project_id,NULL,id',
+            'credentials_file' => 'required|file|mimetypes:application/json',
+        ]);
+
+        $project = FirebaseProject::where('project_id', $request->project_id)->first();
+
+        if ($project) {
+            return back()->with('toast', [
+                'type' => 'default',
+                'message' => 'already exists',
+            ]);
+        }
+
+        if (!$validated['project_id']) {
+            return back()->withErrors([
+                'project_id' => 'already exists',
+            ]);
+        }
+
+        // Verify JSON contains required fields
+        $json = json_decode(file_get_contents($validated['credentials_file']), true);
+        if (!isset($json['project_id']) || $json['project_id'] !== $validated['project_id']) {
+            return back()->withErrors([
+                'credentials_file' => 'JSON does not match selected project',
+            ]);
+        }
+
+        // // Store in secure storage
+        $path = Storage::putFileAs(
+            'firebase-credentials',
+            $validated['credentials_file'],
+            $validated['project_id'] . '.json'
+        );
+
+
+        // Save to database
+        $user_id = Auth::user()->id;
+        $accountId = UserGoogleAccount::where('user_id', '=', $user_id)->first()->id;
+        FirebaseProject::updateOrCreate([
+            'user_google_account_id' => $accountId,
+            'name' => $request->display_name ?? $validated['project_id'],
+            'project_id' => $validated['project_id'],
+            'credentials_path' => $path,
+        ]);
+
+        return redirect()->route('uploads.index')->with('toast', [
+            'type' => 'success',
+            'message' => 'Credentials added successfully',
+        ]);
     }
 }

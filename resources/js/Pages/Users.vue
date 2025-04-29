@@ -11,19 +11,29 @@ import EmptyUserState from "@/Components/users/EmptyUserState.vue";
 import UserSkeleton from "@/Components/users/UserSkeleton.vue";
 import UsersFilters from "@/Components/users/UsersFilters.vue";
 import UsersList from "@/Components/users/UsersList.vue";
+import UsersPagination from "@/Components/users/UsersPagination.vue";
 
+// const props = defineProps({
+//     users: Array,
+//     pagination: Object,
+//     filters: Object,
+//     firebaseProjects: {
+//         type: Array,
+//         default: () => [],
+//     },
+// });
 const props = defineProps({
     users: Array,
     pagination: Object,
     filters: Object,
-    googleAccounts: {
-        type: Array,
-        default: () => [],
-    },
+    firebaseProjects: Array,
+    selectedProjectId: String,
 });
 
 const page = usePage();
 const { toast } = useToast();
+console.log(page);
+
 if (page.props.toast) {
     toast({
         title: page.props.toast.type === "success" ? "Success" : "Error",
@@ -34,6 +44,7 @@ if (page.props.toast) {
 }
 
 const searchQuery = ref(props.filters.search || "");
+
 const isLoading = ref(false);
 
 // Client-side filtered users
@@ -45,44 +56,42 @@ const filteredUsers = computed(() => {
 });
 
 // Handle pagination
-const handlePageChange = async (page) => {
+const handlePageChange = (pageNum) => {
     isLoading.value = true;
-    try {
-        await router.get(
-            route("users.index"),
-            {
-                page,
-                search: searchQuery.value,
+    router.get(
+        route("users.index"),
+        {
+            page: pageNum,
+            project: props.selectedProjectId, // <— carry this through
+            search: searchQuery.value || undefined,
+        },
+        {
+            preserveState: true,
+            replace: true,
+            onFinish: () => {
+                isLoading.value = false;
             },
-            {
-                preserveState: true,
-                replace: true,
-            }
-        );
-    } finally {
-        isLoading.value = false;
-    }
+        }
+    );
 };
 
-const refreshUsers = async () => {
+const refreshUsers = () => {
     isLoading.value = true;
-    console.log("gg");
-
-    try {
-        router.get(
-            route("users.index"),
-            {
-                page: props.pagination.currentPage,
-                search: searchQuery.value,
+    router.get(
+        route("users.index"),
+        {
+            page: props.pagination.currentPage,
+            project: props.selectedProjectId, // <— and here
+            search: searchQuery.value || undefined,
+        },
+        {
+            preserveState: true,
+            replace: true,
+            onFinish: () => {
+                isLoading.value = false;
             },
-            {
-                preserveState: true,
-                replace: true,
-            }
-        );
-    } finally {
-        isLoading.value = false;
-    }
+        }
+    );
 };
 </script>
 
@@ -93,14 +102,16 @@ const refreshUsers = async () => {
         <UsersHead
             :isLoading="isLoading"
             @refreshUsers="refreshUsers"
-            @addUser="addUser"
+            :selected-project-id="selectedProjectId"
         />
 
         <div class="space-y-6">
             <!-- Search and Filter -->
             <UsersFilters
                 v-model:searchQuery="searchQuery"
-                :googleAccounts="googleAccounts"
+                v-model:isLoading="isLoading"
+                :firebaseProjects="firebaseProjects"
+                :selectedProject="selectedProjectId"
             />
 
             <!-- Loading State -->
@@ -116,6 +127,18 @@ const refreshUsers = async () => {
             <UsersList
                 v-if="!isLoading && users.length > 0"
                 :users="filteredUsers"
+                :selectedProjectId="selectedProjectId"
+            />
+
+            <UsersPagination
+                v-if="!isLoading && pagination.total > pagination.perPage"
+                :pagination="{
+                    total: pagination.total,
+                    perPage: pagination.perPage,
+                    currentPage: pagination.currentPage,
+                    lastPage: pagination.lastPage,
+                }"
+                @page-change="handlePageChange"
             />
         </div>
     </AuthenticatedLayout>

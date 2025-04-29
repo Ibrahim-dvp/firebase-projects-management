@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_google_account_id')->constrained('user_google_accounts')->onDelete('cascade');
             $table->string('project_id')->unique();
             $table->string('name');
-            $table->string('region')->nullable();
+            $table->string('credentials_path');  // Encrypted storage path
             $table->timestamps();
         });
     }

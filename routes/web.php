@@ -19,13 +19,6 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Route::get('/dashboard', function () {
-//     $googleAccounts = UserGoogleAccount::where('user_id', Auth::id())->get();
-//     return Inertia::render('Dashboard', [
-//         'googleAccounts' => $googleAccounts,
-//     ]);
-// })->middleware(['auth', 'verified'])->name('dashboard');
-
 Route::middleware(['auth', 'verified'])->group(function () {
     // profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -53,9 +46,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('users.index');
     Route::post('/users', [FirebaseUserController::class, 'store'])
         ->name('users.store');
-
-    Route::post('/users/import', [FirebaseUserController::class, 'import'])
+    Route::delete('/users/{uid}', [FirebaseUserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/reset-password', [FirebaseUserController::class, 'resetPassword'])->name('users.resetPassword');
+    Route::post('/users/import', [FirebaseUserController::class, 'importUsers'])
         ->name('users.import');
+
+
+    //Uploads
+    Route::get('/uploads', [FirebaseProjectController::class, 'create'])->name('uploads.index');
+    Route::post('/uploads', [FirebaseProjectController::class, 'store'])->name('uploads.store');
+    Route::delete('/uploads/{firebaseProject}', [FirebaseProjectController::class, 'destroy'])->name('uploads.destroy');
 });
 
 

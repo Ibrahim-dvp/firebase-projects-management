@@ -11,6 +11,7 @@ export default function useFirebaseProjects() {
         isLoading.value = true;
         error.value = null;
         firebaseProjects.value = [];
+        // console.log(googleAccounts);
 
         try {
             const projectPromises = googleAccounts.map(async (account) => {
