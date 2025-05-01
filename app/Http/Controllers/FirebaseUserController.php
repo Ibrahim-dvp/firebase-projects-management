@@ -29,15 +29,15 @@ class FirebaseUserController extends Controller
                 return (new Factory)->withServiceAccount($path)->createAuth();
             }
         } else {
-            $defaultPath = base_path(env('FIREBASE_CREDENTIALS'));
-            if (!file_exists($defaultPath)) {
-                throw new \Exception('Firebase credentials file not found');
-            }
+            return null;
+            // $defaultPath = base_path(env('FIREBASE_CREDENTIALS'));
+            // if (!file_exists($defaultPath)) {
+            //     throw new \Exception('Firebase credentials file not found');
+            // }
 
-            return (new Factory)->withServiceAccount($defaultPath)->createAuth();
+            // return (new Factory)->withServiceAccount($defaultPath)->createAuth();
         }
     }
-
 
     public function index(Request $request)
     {
@@ -45,14 +45,29 @@ class FirebaseUserController extends Controller
         $page = $request->input('page', 1);
         $projectId = $request->input('project');
 
-        $projects = FirebaseProject::all();
-
+        $projects = auth()->user()->googleAccounts
+            ->load('firebaseProjects')
+            ->pluck('firebaseProjects')
+            ->flatten();
         if (!$projectId && $projects->isNotEmpty()) {
             $projectId = $projects->first()->project_id;
         }
 
         $this->auth = $this->loadAuth($projectId);
-
+        if ($this->auth == null) {
+            return Inertia::render('Users', [
+                'users' => [],
+                'pagination' => [
+                    'total' => 0,
+                    'perPage' => 0,
+                    'currentPage' => 1,
+                    'lastPage' => 1,
+                ],
+                'filters' => $request->only(['search']),
+                'firebaseProjects' => $projects,
+                'selectedProjectId' => $projectId,
+            ]);
+        }
         $users = [];
         $start = ($page - 1) * $perPage;
         $end = $start + $perPage;
@@ -163,26 +178,27 @@ class FirebaseUserController extends Controller
         }
     }
 
-    public function import(Request $request)
+    public function resetPasswordAdmin(Request $request)
     {
-        // dd($request->input('users'));
-        $request->validate([
-            'users' => 'required|array',
-            'users.*.email' => 'required|email',
-            'users.*.password' => 'required|min:6',
+        $data = $request->validate([
+            'uid'                       => 'required|string',
+            'password'                  => 'required|string|min:6|confirmed',
+            'project'                   => 'required|string',
         ]);
-
-        $chunks = array_chunk($request->input('users'), 500);
-        foreach ($chunks as $chunk) {
-            ImportFirebaseUsers::dispatch($chunk, $request->input('sendEmailVerification', false));
+        $auth = $this->loadAuth($data['project']);
+        try {
+            $auth->changeUserPassword($data['uid'], $data['password']);
+            return back()->with('toast', [
+                'type'    => 'success',
+                'message' => "Password for {$data['uid']} reset successfully.",
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('toast', [
+                'type'    => 'error',
+                'message' => 'Failed to reset password: ' . $e->getMessage(),
+            ]);
         }
-
-        return redirect()->back()->with('toast', [
-            'type' => 'success',
-            'message' => 'Import started! You will be notified when it is done.',
-        ]);
     }
-
     public function importUsers(Request $request)
     {
         $request->validate([

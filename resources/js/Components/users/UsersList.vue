@@ -44,32 +44,36 @@ const deleteUser = async (uid) => {
     }
 };
 
-const resetPassword = async (email) => {
-    try {
-        router.post(
-            route("users.resetPassword"),
-            {
-                email,
-                project: props.selectedProjectId,
-            },
-            {
-                preserveState: true,
-                onSuccess: () => {
-                    toast({
-                        title: "Reset Email Sent",
-                        description: `Password reset email sent to ${email}`,
-                    });
-                },
-            }
-        );
-    } catch (error) {
-        toast({
-            title: "Error",
-            description: error.message || "Failed to send reset email.",
-            variant: "destructive",
-        });
-    }
+const emit = defineEmits(["open-reset"]);
+const openReset = (email, uid) => {
+    emit("open-reset", { email, uid });
 };
+// const resetPassword = async (email) => {
+//     try {
+//         router.post(
+//             route("users.resetPassword"),
+//             {
+//                 email,
+//                 project: props.selectedProjectId,
+//             },
+//             {
+//                 preserveState: true,
+//                 onSuccess: () => {
+//                     toast({
+//                         title: "Reset Email Sent",
+//                         description: `Password reset email sent to ${email}`,
+//                     });
+//                 },
+//             }
+//         );
+//     } catch (error) {
+//         toast({
+//             title: "Error",
+//             description: error.message || "Failed to send reset email.",
+//             variant: "destructive",
+//         });
+//     }
+// };
 
 const formatDate = (dateString) => {
     if (!dateString) return "Never";
@@ -138,10 +142,17 @@ const formatDate = (dateString) => {
                         >
                             Delete
                         </Button>
-                        <Button
+                        <!-- <Button
                             variant="outline"
                             size="sm"
                             @click="resetPassword(user.email)"
+                        >
+                            Reset
+                        </Button> -->
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            @click="openReset(user.email, user.uid)"
                         >
                             Reset
                         </Button>

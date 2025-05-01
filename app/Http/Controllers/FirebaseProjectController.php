@@ -120,6 +120,16 @@ class FirebaseProjectController extends Controller
     {
         $user = $request->user();
         $googleAccounts = $user->googleAccounts;
+        $projects = auth()->user()->googleAccounts
+            ->load('firebaseProjects')
+            ->pluck('firebaseProjects')
+            ->flatten();
+        if ($googleAccounts->isEmpty()) {
+            return Inertia::render('Uploads', [
+                'googleAccounts' => [],
+                'firebaseProjects' => $projects ?? [],
+            ]);
+        }
         foreach ($googleAccounts as $googleAccount) {
             $validAccount = $this->getValidGoogleAccount($user, $googleAccount->id);
             if ($validAccount) {
@@ -134,8 +144,7 @@ class FirebaseProjectController extends Controller
 
         return Inertia::render('Uploads', [
             'googleAccounts' => $validatedAccounts,
-            'firebaseProjects' => FirebaseProject::all(),
-
+            'firebaseProjects' => $projects ?? [],
         ]);
     }
 

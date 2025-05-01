@@ -12,16 +12,8 @@ import UserSkeleton from "@/Components/users/UserSkeleton.vue";
 import UsersFilters from "@/Components/users/UsersFilters.vue";
 import UsersList from "@/Components/users/UsersList.vue";
 import UsersPagination from "@/Components/users/UsersPagination.vue";
+import ResetPasswordDialog from "@/Components/users/ResetPasswordDialog.vue";
 
-// const props = defineProps({
-//     users: Array,
-//     pagination: Object,
-//     filters: Object,
-//     firebaseProjects: {
-//         type: Array,
-//         default: () => [],
-//     },
-// });
 const props = defineProps({
     users: Array,
     pagination: Object,
@@ -32,7 +24,6 @@ const props = defineProps({
 
 const page = usePage();
 const { toast } = useToast();
-console.log(page);
 
 if (page.props.toast) {
     toast({
@@ -44,8 +35,17 @@ if (page.props.toast) {
 }
 
 const searchQuery = ref(props.filters.search || "");
-
 const isLoading = ref(false);
+const showResetDialog = ref(false);
+const resetEmail = ref("");
+const userId = ref("");
+
+// catch the event from UsersList
+function onOpenReset({ email, uid }) {
+    resetEmail.value = email;
+    userId.value = uid;
+    showResetDialog.value = true;
+}
 
 // Client-side filtered users
 const filteredUsers = computed(() => {
@@ -128,6 +128,14 @@ const refreshUsers = () => {
                 v-if="!isLoading && users.length > 0"
                 :users="filteredUsers"
                 :selectedProjectId="selectedProjectId"
+                @open-reset="onOpenReset"
+            />
+
+            <ResetPasswordDialog
+                v-model="showResetDialog"
+                :email="resetEmail"
+                :uid="userId"
+                :project="selectedProjectId"
             />
 
             <UsersPagination
