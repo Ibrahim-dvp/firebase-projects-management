@@ -47,16 +47,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/users', [FirebaseUserController::class, 'store'])
         ->name('users.store');
     Route::delete('/users/{uid}', [FirebaseUserController::class, 'destroy'])->name('users.destroy');
-    // Route::post('/users/reset-password', [FirebaseUserController::class, 'resetPassword'])->name('users.resetPassword');
+    Route::delete('/users/all/{project}', [FirebaseUserController::class, 'deleteAll'])->name('users.deleteAll');
+    Route::post('/users/reset-password', [FirebaseUserController::class, 'resetPassword'])->name('users.resetPassword');
     // routes/web.php
-    Route::post('/users/reset-password-admin', [
-        FirebaseUserController::class,
-        'resetPasswordAdmin'
-    ])->name('users.resetPasswordAdmin');
+    // Route::post('/users/reset-password-admin', [
+    //     FirebaseUserController::class,
+    //     'resetPasswordAdmin'
+    // ])->name('users.resetPasswordAdmin');
 
     Route::post('/users/import', [FirebaseUserController::class, 'importUsers'])
         ->name('users.import');
-
 
     //Uploads
     Route::get('/uploads', [FirebaseProjectController::class, 'create'])->name('uploads.index');

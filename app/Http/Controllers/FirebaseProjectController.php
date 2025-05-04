@@ -13,12 +13,6 @@ use Illuminate\Support\Facades\Storage;
 class FirebaseProjectController extends Controller
 {
 
-    /**
-     * Display a listing of the resource.
-     */
-
-
-
     public function index(Request $request)
     {
         $user = $request->user();
@@ -73,7 +67,6 @@ class FirebaseProjectController extends Controller
                 }
 
                 $client->fetchAccessTokenWithRefreshToken($googleAccount->refresh_token);
-
                 $newToken = $client->getAccessToken();
 
                 $googleAccount->update([

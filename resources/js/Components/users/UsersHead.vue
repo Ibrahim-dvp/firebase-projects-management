@@ -1,6 +1,11 @@
 <script setup>
 import { ref, watch } from "vue";
-import { PlusIcon, RefreshCwIcon, FileInputIcon } from "lucide-vue-next";
+import {
+    PlusIcon,
+    RefreshCwIcon,
+    FileInputIcon,
+    Trash2,
+} from "lucide-vue-next";
 import { Button } from "@/Components/ui/button";
 import {
     Dialog,
@@ -42,7 +47,6 @@ const [email, emailAttrs] = defineField("email");
 const [password, passwordAttrs] = defineField("password");
 const [project] = defineField("project"); // Define the project field
 
-// Set the project value when selectedProjectId changes
 watch(
     () => props.selectedProjectId,
     (newVal) => {
@@ -79,6 +83,25 @@ const onSubmit = handleSubmit(async (values) => {
     }
 });
 
+const deleteAll = () => {
+    try {
+        router.delete(route("users.deleteAll", props.selectedProjectId), {
+            preserveState: true,
+            onSuccess: () => {
+                toast({
+                    title: "Success",
+                    description: `All Users deleted`,
+                });
+            },
+        });
+    } catch (error) {
+        toast({
+            title: "Error",
+            description: error.message || "Failed to delete all users.",
+            variant: "destructive",
+        });
+    }
+};
 defineEmits(["refreshUsers"]);
 </script>
 
@@ -107,6 +130,14 @@ defineEmits(["refreshUsers"]);
                     <Button size="sm">
                         <PlusIcon class="h-4 w-4 mr-2" />
                         Add User
+                    </Button>
+                    <Button
+                        size="sm"
+                        class="bg-red-600 text-white"
+                        @click="deleteAll"
+                    >
+                        <Trash2 class="h-4 w-4 mr-2" />
+                        Delete All
                     </Button>
                 </DialogTrigger>
                 <DialogContent>

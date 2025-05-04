@@ -87,9 +87,10 @@ const visiblePages = computed(() => {
                 :disabled="pagination.currentPage >= pagination.lastPage"
             />
         </div>
-        <div class="text-sm text-muted-foreground">
+        <div class="text-sm text-muted-foreground flex justify-between">
             Showing page {{ pagination.currentPage }} of
             {{ pagination.lastPage }}
+            <div>Total of users {{ pagination.total }}</div>
         </div>
     </Pagination>
 </template>
