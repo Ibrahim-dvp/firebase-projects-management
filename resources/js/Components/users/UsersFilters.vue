@@ -12,7 +12,7 @@ import {
     SelectLabel,
     SelectValue,
 } from "../ui/select";
-import { SearchIcon } from "lucide-vue-next";
+import { SearchIcon, RefreshCwIcon } from "lucide-vue-next";
 
 const props = defineProps({
     firebaseProjects: {
@@ -40,13 +40,17 @@ const handleProjectChange = (projectId) => {
         }
     );
 };
-const emit = defineEmits(["update:searchQuery, 'update:isLoading"]);
+const emit = defineEmits([
+    "update:searchQuery, 'update:isLoading",
+    "refreshUsers",
+]);
 </script>
 
 <template>
     <div class="flex flex-col sm:flex-row gap-4">
         <div class="relative flex-1">
             <Input
+                class="p-5"
                 :modelValue="searchQuery"
                 @update:modelValue="$emit('update:searchQuery', $event)"
                 placeholder="Search users by email..."
@@ -81,5 +85,17 @@ const emit = defineEmits(["update:searchQuery, 'update:isLoading"]);
                 </SelectContent>
             </Select>
         </div>
+        <Button
+            class="p-5"
+            variant="outline"
+            :disabled="isLoading"
+            @click="$emit('refreshUsers')"
+        >
+            <RefreshCwIcon
+                class="h-4 w-4 mr-2"
+                :class="{ 'animate-spin': isLoading }"
+            />
+            Refresh
+        </Button>
     </div>
 </template>

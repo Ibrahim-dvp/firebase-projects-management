@@ -101,7 +101,6 @@ const refreshUsers = () => {
 
         <UsersHead
             :isLoading="isLoading"
-            @refreshUsers="refreshUsers"
             :selected-project-id="selectedProjectId"
         />
 
@@ -110,6 +109,7 @@ const refreshUsers = () => {
             <UsersFilters
                 v-model:searchQuery="searchQuery"
                 v-model:isLoading="isLoading"
+                @refreshUsers="refreshUsers"
                 :firebaseProjects="firebaseProjects"
                 :selectedProject="selectedProjectId"
             />

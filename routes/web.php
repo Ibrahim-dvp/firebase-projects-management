@@ -49,12 +49,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/users/{uid}', [FirebaseUserController::class, 'destroy'])->name('users.destroy');
     Route::delete('/users/all/{project}', [FirebaseUserController::class, 'deleteAll'])->name('users.deleteAll');
     Route::post('/users/reset-password', [FirebaseUserController::class, 'resetPassword'])->name('users.resetPassword');
-    // routes/web.php
-    // Route::post('/users/reset-password-admin', [
-    //     FirebaseUserController::class,
-    //     'resetPasswordAdmin'
-    // ])->name('users.resetPasswordAdmin');
-
+    Route::post('/users/send-reset-emails', [FirebaseUserController::class, 'resetPassword'])
+        ->name('users.send-reset-emails');
     Route::post('/users/import', [FirebaseUserController::class, 'importUsers'])
         ->name('users.import');
 

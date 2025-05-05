@@ -34,8 +34,6 @@ class UserGoogleAccountController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
 
-            // dd($googleUser);
-
             if (UserGoogleAccount::where('google_id', $googleUser->id)->exists()) {
                 return redirect()->route('dashboard',)->with('error', 'Google account already linked!');
             }

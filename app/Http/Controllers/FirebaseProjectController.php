@@ -58,20 +58,19 @@ class FirebaseProjectController extends Controller
         if ($this->tokenNeedsRefresh($googleAccount)) {
             $client = $this->createGoogleClient($googleAccount);
             try {
-                if ($googleAccount->access_token) {
-                    $client->setAccessToken([
-                        'access_token' => $googleAccount->access_token,
-                        'refresh_token' => $googleAccount->refresh_token,
-                        'expires_in' => $googleAccount->expires_at->diffInSeconds(now()),
-                    ]);
-                }
 
-                $client->fetchAccessTokenWithRefreshToken($googleAccount->refresh_token);
-                $newToken = $client->getAccessToken();
+                // $client->fetchAccessTokenWithRefreshToken($googleAccount->refresh_token);
+                // $newToken = $client->getAccessToken();
 
+                // $googleAccount->update([
+                //     'access_token' => $newToken['access_token'],
+                //     'expires_at' => now()->addSeconds($newToken['expires_in']),
+                // ]);
+                $newToken = $client->fetchAccessTokenWithRefreshToken();
                 $googleAccount->update([
-                    'access_token' => $newToken['access_token'],
-                    'expires_at' => now()->addSeconds($newToken['expires_in']),
+                    'access_token'  => $newToken['access_token'],
+                    'expires_at'    => now()->addSeconds($newToken['expires_in']),
+                    'refresh_token' => $newToken['refresh_token'] ?? $googleAccount->refresh_token,
                 ]);
 
                 return $googleAccount->fresh();
@@ -95,17 +94,18 @@ class FirebaseProjectController extends Controller
         $client = new Client();
         $client->setClientId(config('services.google.client_id'));
         $client->setClientSecret(config('services.google.client_secret'));
-        $client->setRedirectUri(config('services.google.redirect')); // Make sure this is set
-        $client->setPrompt('consent');
-        $client->setAccessType('offline'); // Required to get refresh tokens
-        $client->setApprovalPrompt('force'); // Sometimes needed for first authorization
+        $client->setRedirectUri(config('services.google.redirect'));
+        // $client->setPrompt('consent');
+        // $client->setAccessType('offline'); // Required to get refresh tokens
+        // $client->setApprovalPrompt('force'); // Sometimes needed for first authorization
         $client->addScope('https://www.googleapis.com/auth/firebase');
         $client->addScope('https://www.googleapis.com/auth/cloud-platform');
 
-        if ($googleAccount->access_token) {
-            $client->setAccessToken($googleAccount->access_token);
-        }
-
+        $client->setAccessToken([
+            'access_token'  => $googleAccount->access_token,
+            'refresh_token' => $googleAccount->refresh_token,
+            'expires_in'    => $googleAccount->expires_at->diffInSeconds(now()),
+        ]);
         return $client;
     }
 

@@ -188,11 +188,16 @@ class FirebaseUserController extends Controller
 
     public function resetPassword(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        $request->validate([
+            'subject' => 'required|string',
+            'body' => 'required|string',
+            'senderEmail' => 'required|email',
+            'senderName' => 'required|string',
+            'replyTo' => 'nullable|email',
+            'project' => 'required|string'
+        ]);
         $projectId = $request->input('project');
-
         $url = "https://identitytoolkit.googleapis.com/admin/v2/projects/{$projectId}/config";
-
         $query = [
             'updateMask' => implode(',', [
                 'notification.sendEmail.dnsInfo.useCustomDomain',
@@ -203,19 +208,20 @@ class FirebaseUserController extends Controller
             'notification' => [
                 'sendEmail' => [
                     'dnsInfo' => [
+                        "customDomain" => 'zmachine.pro',
                         'useCustomDomain' => true,
-                        "customDomain" => 'amazon.com',
                     ],
                     'resetPasswordTemplate' => [
-                        // 'senderLocalPart' => 'ibrahim.b@intelligentb2b.com',
-                        'replyTo' => 'amazon',
-                        'senderDisplayName' => 'amazon.com',
-                        'subject'     => "testing",
-                        'body'        => "
-                        Hello, Follow this link to reset your %APP_NAME% password for your %EMAIL% account.
-                        https://test2-9f700.firebaseapp.com/__/auth/action?mode=action&oobCode=code
-                        If you didn't ask to reset your password, you can ignore this email.Thanks,Your %APP_NAME% team
-                        ",
+                        'senderLocalPart' => explode('@', $request->senderEmail)[0],
+                        'senderDisplayName' =>  $request->senderName,
+                        'replyTo' => $request->replyTo,
+                        'subject'     =>  $request->subject,
+                        'body'        => $request->body,
+                        // "
+                        // Hello, Follow this link to reset your %APP_NAME% password for your %EMAIL% account.
+                        // https://test2-9f700.firebaseapp.com/__/auth/action?mode=action&oobCode=code
+                        // If you didn't ask to reset your password, you can ignore this email.Thanks,Your %APP_NAME% team
+                        // "
                     ],
                 ],
             ],
@@ -241,12 +247,11 @@ class FirebaseUserController extends Controller
         }
 
         if ($response->getStatusCode() === 200) {
-            // dd('gg');
             $auth = $this->loadAuth($projectId);
-            $auth->sendPasswordResetLink($request->email);
+            $auth->sendPasswordResetLink('ibrahimsaadoune7@gmail.com');
             return back()->with('toast', [
                 'type'    => 'success',
-                'message' => 'Firebase reset‑password template updated!',
+                'message' => 'Firebase reset-password template updated!',
             ]);
         }
 
@@ -259,27 +264,6 @@ class FirebaseUserController extends Controller
         ]);
     }
 
-    public function resetPasswordAdmin(Request $request)
-    {
-        $data = $request->validate([
-            'uid'                       => 'required|string',
-            'password'                  => 'required|string|min:6|confirmed',
-            'project'                   => 'required|string',
-        ]);
-        $auth = $this->loadAuth($data['project']);
-        try {
-            $auth->changeUserPassword($data['uid'], $data['password']);
-            return back()->with('toast', [
-                'type'    => 'success',
-                'message' => "Password for {$data['uid']} reset successfully.",
-            ]);
-        } catch (\Exception $e) {
-            return back()->with('toast', [
-                'type'    => 'error',
-                'message' => 'Failed to reset password: ' . $e->getMessage(),
-            ]);
-        }
-    }
     public function importUsers(Request $request)
     {
         $request->validate([
