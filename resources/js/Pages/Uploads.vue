@@ -57,6 +57,7 @@ const { firebaseProjects, fetchProjects } = useFirebaseProjects(
 
 // Tab state
 const activeTab = ref("serviceAccount");
+const filteredProjectKeys = ref([]);
 
 // Service Account Form
 const serviceAccountForm = useForm({
@@ -68,6 +69,7 @@ const serviceAccountForm = useForm({
 
 // User Import Form
 const userImportForm = useForm({
+    email: "", // Add this line
     target_project_id: "",
     csv_file: null,
     send_verification_emails: false,
@@ -144,6 +146,21 @@ const submitUserImport = (event) => {
 };
 
 watch(
+    () => userImportForm.email,
+    (selectedEmail) => {
+        if (selectedEmail) {
+            filteredProjectKeys.value = props.firebaseProjects.filter(
+                (project) => project.email === selectedEmail
+            );
+        } else {
+            filteredProjectKeys.value = [...props.firebaseProjects];
+        }
+        userImportForm.target_project_id = "";
+    },
+    { immediate: true }
+);
+
+watch(
     () => serviceAccountForm.project_id,
     (newProjectId) => {
         const selected = firebaseProjects.value.find(
@@ -155,10 +172,16 @@ watch(
 );
 watch(
     () => serviceAccountForm.email,
-    (projectsEmail) => {
-        firebaseProjects.value = firebaseProjects.value.filter(
-            (p) => p.accountEmail === projectsEmail
-        );
+    (selectedEmail) => {
+        if (selectedEmail) {
+            fetchProjects(
+                props.googleAccounts.filter(
+                    (account) => account.email === selectedEmail
+                )
+            );
+        } else {
+            fetchProjects(props.googleAccounts);
+        }
     }
 );
 
@@ -396,6 +419,28 @@ onMounted(() => {
                                 class="space-y-6 mt-6"
                             >
                                 <div class="space-y-2">
+                                    <Label for="email">Select Email</Label>
+                                    <Select
+                                        v-model="userImportForm.email"
+                                        required
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue
+                                                placeholder="Select an email"
+                                            />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem
+                                                v-for="account in googleAccounts"
+                                                :key="account.email"
+                                                :value="account.email"
+                                            >
+                                                {{ account.email }}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div class="space-y-2">
                                     <Label>Target Project</Label>
                                     <Select
                                         v-model="
@@ -410,7 +455,7 @@ onMounted(() => {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem
-                                                v-for="project in props.firebaseProjects"
+                                                v-for="project in filteredProjectKeys"
                                                 :key="project.id"
                                                 :value="project.project_id"
                                             >

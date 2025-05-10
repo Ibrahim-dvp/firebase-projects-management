@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('firebase_projects', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_google_account_id')->constrained('user_google_accounts')->onDelete('cascade');
+            $table->string('email');
             $table->string('project_id')->unique();
             $table->string('name');
             $table->string('credentials_path');  // Encrypted storage path

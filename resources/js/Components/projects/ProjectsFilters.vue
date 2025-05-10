@@ -47,7 +47,10 @@ const emit = defineEmits(["update:searchQuery", "update:selectedAccountEmail"]);
         <!-- <Select v-model="selectedAccountEmailModel"> -->
         <!-- :modelValue="selectedProject"
             @update:modelValue="handleProjectChange" -->
-        <Select>
+        <Select
+            v-model="selectedAccountEmailModel"
+            @update:modelValue="handleProjectChange"
+        >
             <SelectTrigger class="w-[180px]">
                 <SelectValue placeholder="Filter by account" />
             </SelectTrigger>

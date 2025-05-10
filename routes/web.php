@@ -4,9 +4,7 @@ use Inertia\Inertia;
 use App\Models\UserGoogleAccount;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Foundation\Application;
 use App\Http\Controllers\ProfileController;
-
 use App\Http\Controllers\FirebaseUserController;
 use App\Http\Controllers\FirebaseProjectController;
 use App\Http\Controllers\UserGoogleAccountController;

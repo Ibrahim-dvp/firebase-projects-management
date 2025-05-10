@@ -11,6 +11,8 @@ use App\Models\FirebaseProject;
 use App\Jobs\ImportFirebaseUsers;
 use App\Models\UserGoogleAccount;
 use Kreait\Firebase\Contract\Auth;
+use Illuminate\Support\Facades\Bus;
+use App\Jobs\SendPasswordResetEmails;
 use Symfony\Component\Process\Process;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
@@ -71,7 +73,6 @@ class FirebaseUserController extends Controller
         $users = [];
         $start = ($page - 1) * $perPage;
         $end = $start + $perPage;
-
 
         $allUsers = iterator_to_array($this->auth->listUsers(10000));
         $totalCount = count($allUsers);
@@ -246,24 +247,48 @@ class FirebaseUserController extends Controller
             throw $th;
         }
 
-        if ($response->getStatusCode() === 200) {
-            $auth = $this->loadAuth($projectId);
-            $auth->sendPasswordResetLink('ibrahimsaadoune7@gmail.com');
-            return back()->with('toast', [
-                'type'    => 'success',
-                'message' => 'Firebase reset-password template updated!',
-            ]);
+        if ($response->getStatusCode() !== 200) {
+            throw new \Exception('Failed to update template: ' . $response->getBody()->getContents());
         }
 
-        // 7. On failure, surface the error body
-        $error = $response->getBody()->getContents();
-        dd($error);
-        return back()->with('toast', [
-            'type'    => 'error',
-            'message' => 'Failed to update template: ' . $error,
-        ]);
+        $emails = [];
+        $batchSize = 1000;
+        $maxUsers = 10000;
+        $count = 0;
+
+        try {
+            $auth = $this->loadAuth($projectId);
+            foreach ($auth->listUsers($maxUsers, $batchSize) as $user) {
+                if ($user->email) {
+                    $emails[] = $user->email;
+                    $count++;
+                }
+
+                if (count($emails) === $batchSize) {
+
+                    SendPasswordResetEmails::dispatch($emails, $projectId);
+                    $emails = [];
+                }
+
+                if ($count >= $maxUsers) {
+                    break;
+                }
+            }
+
+            if (!empty($emails)) {
+                // dd($emails);
+                SendPasswordResetEmails::dispatch($emails, $projectId);
+            };
+            return back()->with('toast', [
+                'type'    => 'success',
+                'message' => "Password reset emails are being sent to {$count} users.",
+            ]);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
+    //! need improvement
     public function importUsers(Request $request)
     {
         $request->validate([
@@ -280,7 +305,12 @@ class FirebaseUserController extends Controller
                 'local'
             );
             $csvPath = storage_path("app/private/{$relativePath}");
-            // firebase auth:import testCsv.csv  --project test4-77hgj
+            //! make sure to run firebase login --reauth
+            // $logCommand = "firebase login --reauth";
+            // exec($logCommand . ' 2>&1', $output, $returnVar);
+            // dd($output, $returnVar);
+
+            //? firebase auth:import testCsv.csv  --project test4-77hgj
             $command = sprintf(
                 'firebase auth:import %s --project %s ',
                 $csvPath,
@@ -288,14 +318,11 @@ class FirebaseUserController extends Controller
             );
             exec($command . ' 2>&1', $output, $returnVar);
 
-            // 5. Handle result
             if ($returnVar === 0) {
                 return back()->with('success', 'Users imported successfully!');
             } else {
                 return back()->with('erros', $output);
             }
-
-            // return back()->with('error', $this->parseFirebaseError($output));
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         } finally {

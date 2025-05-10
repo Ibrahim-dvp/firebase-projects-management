@@ -5,8 +5,21 @@ import { useToast } from "@/Components/ui/toast/use-toast";
 import { router } from "@inertiajs/vue3";
 import SendEmailDialog from "@/Components/users/SendEmailDialog.vue";
 import AddUserDialog from "@/Components/users/AddUserDialog.vue";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/Components/ui/alert-dialog";
+import { ref } from "vue";
 
 const { toast } = useToast();
+const isDeleteDialogOpen = ref(false);
 
 const props = defineProps({
     isLoading: Boolean,
@@ -18,9 +31,17 @@ const deleteAll = () => {
         router.delete(route("users.deleteAll", props.selectedProjectId), {
             preserveState: true,
             onSuccess: () => {
+                isDeleteDialogOpen.value = false;
                 toast({
                     title: "Success",
                     description: `All Users deleted`,
+                });
+            },
+            onError: (error) => {
+                toast({
+                    title: "Error",
+                    description: error.message || "Failed to delete all users.",
+                    variant: "destructive",
                 });
             },
         });
@@ -46,10 +67,34 @@ const deleteAll = () => {
             <SendEmailDialog :project="selectedProjectId" />
             <AddUserDialog :project="selectedProjectId" />
 
-            <Button size="sm" class="bg-red-600 text-white" @click="deleteAll">
-                <Trash2 class="h-4 w-4 mr-2" />
-                Delete All
-            </Button>
+            <AlertDialog v-model:open="isDeleteDialogOpen">
+                <AlertDialogTrigger as-child>
+                    <Button size="sm" class="bg-red-600 text-white">
+                        <Trash2 class="h-4 w-4 mr-2" />
+                        Delete All
+                    </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle
+                            >Are you absolutely sure?</AlertDialogTitle
+                        >
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently
+                            delete all users in the selected Firebase project.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            @click="deleteAll"
+                            class="bg-red-600 hover:bg-red-700"
+                        >
+                            Continue
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     </div>
 </template>

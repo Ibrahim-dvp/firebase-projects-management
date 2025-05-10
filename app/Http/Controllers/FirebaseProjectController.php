@@ -58,20 +58,25 @@ class FirebaseProjectController extends Controller
         if ($this->tokenNeedsRefresh($googleAccount)) {
             $client = $this->createGoogleClient($googleAccount);
             try {
+                // if ($client->isAccessTokenExpired()) {
+                //     dd($client->fetchAccessTokenWithRefreshToken($googleAccount->refresh_token));
+                //     $token = $client->getAccessToken();
+                //     // Save the new access token
+                // }
+                $client->fetchAccessTokenWithRefreshToken($googleAccount->refresh_token);
+                $newToken = $client->getAccessToken();
 
-                // $client->fetchAccessTokenWithRefreshToken($googleAccount->refresh_token);
-                // $newToken = $client->getAccessToken();
-
-                // $googleAccount->update([
-                //     'access_token' => $newToken['access_token'],
-                //     'expires_at' => now()->addSeconds($newToken['expires_in']),
-                // ]);
-                $newToken = $client->fetchAccessTokenWithRefreshToken();
                 $googleAccount->update([
-                    'access_token'  => $newToken['access_token'],
-                    'expires_at'    => now()->addSeconds($newToken['expires_in']),
-                    'refresh_token' => $newToken['refresh_token'] ?? $googleAccount->refresh_token,
+                    'access_token' => $newToken['access_token'],
+                    'expires_at' => now()->addSeconds($newToken['expires_in']),
                 ]);
+                // $newToken = $client->fetchAccessTokenWithRefreshToken($googleAccount->refresh_token);
+                // dd($newToken);
+                // $googleAccount->update([
+                //     'access_token'  => $newToken['access_token'],
+                //     'expires_at'    => now()->addSeconds($newToken['expires_in']),
+                //     'refresh_token' => $newToken['refresh_token'] ?? $googleAccount->refresh_token,
+                // ]);
 
                 return $googleAccount->fresh();
             } catch (\Exception $e) {
@@ -95,9 +100,8 @@ class FirebaseProjectController extends Controller
         $client->setClientId(config('services.google.client_id'));
         $client->setClientSecret(config('services.google.client_secret'));
         $client->setRedirectUri(config('services.google.redirect'));
-        // $client->setPrompt('consent');
-        // $client->setAccessType('offline'); // Required to get refresh tokens
-        // $client->setApprovalPrompt('force'); // Sometimes needed for first authorization
+        $client->setPrompt('consent');
+        $client->setAccessType('offline'); // Required to get refresh tokens
         $client->addScope('https://www.googleapis.com/auth/firebase');
         $client->addScope('https://www.googleapis.com/auth/cloud-platform');
 
@@ -113,6 +117,7 @@ class FirebaseProjectController extends Controller
     {
         $user = $request->user();
         $googleAccounts = $user->googleAccounts;
+        // dd($googleAccounts);
         $projects = auth()->user()->googleAccounts
             ->load('firebaseProjects')
             ->pluck('firebaseProjects')
@@ -143,7 +148,6 @@ class FirebaseProjectController extends Controller
 
     public function store(Request $request)
     {
-
         $validated = $request->validate([
             'email' => 'required|email|string',
             'display_name' => 'required|string|max:255',
@@ -187,6 +191,7 @@ class FirebaseProjectController extends Controller
         $accountId = UserGoogleAccount::where('user_id', '=', $user_id)->first()->id;
         FirebaseProject::updateOrCreate([
             'user_google_account_id' => $accountId,
+            'email' => $validated['email'],
             'name' => $request->display_name ?? $validated['project_id'],
             'project_id' => $validated['project_id'],
             'credentials_path' => $path,

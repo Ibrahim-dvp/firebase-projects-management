@@ -13,6 +13,7 @@ class FirebaseProject extends Model
     use HasFactory;
     protected $fillable = [
         'user_google_account_id',
+        'email',
         'project_id',
         'name',
         'credentials_path'
