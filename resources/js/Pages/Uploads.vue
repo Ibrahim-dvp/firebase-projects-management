@@ -31,6 +31,7 @@ import {
 } from "lucide-vue-next";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import useFirebaseProjects from "@/Composables/useFirebaseProjects";
+import axios from "axios";
 
 const props = defineProps({
     googleAccounts: {
@@ -101,48 +102,97 @@ const removeFile = (form, type) => {
     if (input.value) input.value.value = "";
 };
 
+const saveFile = async () => {
+    try {
+        if (!serviceAccountForm.credentials_file) {
+            throw new Error("Please upload a JSON file");
+        }
+        const formData = new FormData();
+        formData.append("email", serviceAccountForm.email);
+        formData.append("project_id", serviceAccountForm.project_id);
+        formData.append("display_name", serviceAccountForm.display_name);
+        formData.append(
+            "credentials_file",
+            serviceAccountForm.credentials_file
+        );
+        const response = await axios.post(
+            "http://localhost:3001/api/store-service-account",
+            formData
+        );
+        console.log("Response:", response.data);
+        toast({
+            title: "Success",
+            description: "Service account saved!",
+            duration: 2000,
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        toast({
+            title: "Error",
+            description: error.response?.data?.error || error.message,
+            variant: "destructive",
+        });
+    }
+};
+
 // Submit handlers
-const submitServiceAccount = () => {
+const submitServiceAccount = async () => {
     serviceAccountForm.post(route("uploads.store"), {
         onError: (errors) => {
             toast({
                 title: "Error",
                 description: errors,
+                duration: 2000,
             });
         },
         onSuccess: () => {
-            serviceAccountForm.reset();
+            saveFile();
             toast({
                 title: "success",
-                description: "Key added!",
+                description: "Service account saved!",
+                duration: 2000,
             });
+            serviceAccountForm.reset();
         },
     });
 };
 
-const submitUserImport = (event) => {
+const submitUserImport = async () => {
     if (!userImportForm.csv_file) {
         userImportForm.errors.csv_file = "CSV file is required";
         return;
     }
-    userImportForm.post(route("users.import"), {
-        preserveScroll: true,
-        onSuccess: () => {
-            // Reset form on success
-            userImportForm.reset();
-            if (csvFileInput.value) csvFileInput.value.value = "";
-            toast({
-                title: "Success",
-                description: "Users Addes!",
-            });
-        },
-        onError: (errors) => {
-            toast({
-                title: "error",
-                message: errors,
-            });
-        },
-    });
+
+    const payload = new FormData();
+    payload.append("csv_file", userImportForm.csv_file);
+    payload.append("target_project_id", userImportForm.target_project_id);
+    payload.append(
+        "send_verification_emails",
+        userImportForm.send_verification_emails
+    );
+
+    try {
+        const response = await axios.post(
+            "http://localhost:3001/api/import-users",
+            payload,
+            { headers: { "Content-Type": "multipart/form-data" } }
+        );
+        userImportForm.reset();
+        if (csvFileInput.value) csvFileInput.value.value = "";
+        console.log("import result:", response.data);
+        toast({
+            title: "Success",
+            description: "Users imported!",
+            duration: 2000,
+        });
+    } catch (err) {
+        toast({
+            title: "Error",
+            description: err.response?.data?.error || err.message,
+            variant: "destructive",
+            duration: 3000,
+        });
+    }
 };
 
 watch(
@@ -461,7 +511,8 @@ onMounted(() => {
                                             >
                                                 {{ project.name }} ({{
                                                     project.project_id
-                                                }})
+                                                }}
+                                                ) (Users: {{ project.user_count }})
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
