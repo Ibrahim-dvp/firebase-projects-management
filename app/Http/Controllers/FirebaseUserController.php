@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Inertia\Inertia;
+use App\Models\EmailBatch;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Factory;
@@ -198,6 +199,9 @@ class FirebaseUserController extends Controller
             'project' => 'required|string'
         ]);
         $projectId = $request->input('project');
+        // $users = iterator_to_array($this->loadAuth($projectId)->listUsers(10000));
+        // Artisan::call('app:send-emails', ['project' => $projectId, 'users' => $users]);
+
         $url = "https://identitytoolkit.googleapis.com/admin/v2/projects/{$projectId}/config";
         $query = [
             'updateMask' => implode(',', [
@@ -251,11 +255,16 @@ class FirebaseUserController extends Controller
             throw new \Exception('Failed to update template: ' . $response->getBody()->getContents());
         }
 
+
         $emails = [];
         $batchSize = 1000;
         $maxUsers = 10000;
         $count = 0;
-
+        $batch = EmailBatch::create([
+            'project_id' => $projectId,
+            'total_emails' => 0,
+            'status' => 'processing'
+        ]);
         try {
             $auth = $this->loadAuth($projectId);
             foreach ($auth->listUsers($maxUsers, $batchSize) as $user) {
@@ -263,73 +272,24 @@ class FirebaseUserController extends Controller
                     $emails[] = $user->email;
                     $count++;
                 }
-
                 if (count($emails) === $batchSize) {
-
-                    SendPasswordResetEmails::dispatch($emails, $projectId);
+                    SendPasswordResetEmails::dispatch($emails, $projectId, $batch->id);
                     $emails = [];
                 }
-
                 if ($count >= $maxUsers) {
                     break;
                 }
             }
-
             if (!empty($emails)) {
-                // dd($emails);
-                SendPasswordResetEmails::dispatch($emails, $projectId);
+                SendPasswordResetEmails::dispatch($emails, $projectId, $batch->id);
             };
+            $batch->update(['total_emails' => $count]);
             return back()->with('toast', [
                 'type'    => 'success',
                 'message' => "Password reset emails are being sent to {$count} users.",
             ]);
         } catch (\Throwable $th) {
             throw $th;
-        }
-    }
-
-    //! need improvement
-    public function importUsers(Request $request)
-    {
-        $request->validate([
-            'target_project_id' => 'required|string',
-            'csv_file' => 'required|file|mimes:csv,txt',
-        ]);
-
-        try {
-            $file = $request->file('csv_file');
-            $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
-            $relativePath = $file->storeAs(
-                'temp-imports',
-                $filename,
-                'local'
-            );
-            $csvPath = storage_path("app/private/{$relativePath}");
-            //! make sure to run firebase login --reauth
-            // $logCommand = "firebase login --reauth";
-            // exec($logCommand . ' 2>&1', $output, $returnVar);
-            // dd($output, $returnVar);
-
-            //? firebase auth:import testCsv.csv  --project test4-77hgj
-            $command = sprintf(
-                'firebase auth:import %s --project %s ',
-                $csvPath,
-                $request->target_project_id,
-            );
-            exec($command . ' 2>&1', $output, $returnVar);
-
-            if ($returnVar === 0) {
-                return back()->with('success', 'Users imported successfully!');
-            } else {
-                return back()->with('erros', $output);
-            }
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
-        } finally {
-            // Clean up
-            if (isset($csvPath) && file_exists($csvPath)) {
-                unlink($csvPath);
-            }
         }
     }
 }

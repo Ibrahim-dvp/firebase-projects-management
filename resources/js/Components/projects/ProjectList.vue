@@ -33,7 +33,6 @@ const props = defineProps({
         default: () => [],
     },
 });
-console.log(props.project);
 
 const emit = defineEmits(["update:open", "refreshProjects"]);
 const { toast } = useToast();

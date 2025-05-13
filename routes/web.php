@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EmailBatchController;
 use Inertia\Inertia;
 use App\Models\UserGoogleAccount;
 use Illuminate\Support\Facades\Auth;
@@ -56,6 +57,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/uploads', [FirebaseProjectController::class, 'create'])->name('uploads.index');
     Route::post('/uploads', [FirebaseProjectController::class, 'store'])->name('uploads.store');
     Route::delete('/uploads/{firebaseProject}', [FirebaseProjectController::class, 'destroy'])->name('uploads.destroy');
+
+    //emails
+    Route::get('/emails-monitor', [EmailBatchController::class, 'index'])->name('emails-monitor.index');
 });
 
 

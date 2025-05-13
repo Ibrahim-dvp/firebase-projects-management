@@ -24,7 +24,6 @@ const props = defineProps({
 
 const page = usePage();
 const { toast } = useToast();
-console.log(page.props);
 if (page.props.toast) {
     toast({
         title: page.props.toast.type === "success" ? "Success" : "Error",

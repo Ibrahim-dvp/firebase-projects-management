@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Google\Client;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Kreait\Firebase\Factory;
 use App\Models\FirebaseProject;
 use App\Models\UserGoogleAccount;
 use Illuminate\Support\Facades\Auth;
@@ -117,11 +118,23 @@ class FirebaseProjectController extends Controller
     {
         $user = $request->user();
         $googleAccounts = $user->googleAccounts;
-        // dd($googleAccounts);
         $projects = auth()->user()->googleAccounts
             ->load('firebaseProjects')
             ->pluck('firebaseProjects')
             ->flatten();
+
+        $projects->each(function ($project) {
+            $path = storage_path("app/private/{$project->credentials_path}");
+            $auth = (new Factory)->withServiceAccount($path)->createAuth();
+
+            try {
+                $users = $auth->listUsers(20000);
+                $project->user_count = iterator_count($users);
+            } catch (\Exception $e) {
+                $project->user_count = 0;
+                dd($e);
+            }
+        });
         if ($googleAccounts->isEmpty()) {
             return Inertia::render('Uploads', [
                 'googleAccounts' => [],

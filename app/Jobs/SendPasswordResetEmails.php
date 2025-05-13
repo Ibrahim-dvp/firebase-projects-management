@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use Kreait\Firebase\Auth;
+use App\Models\EmailBatch;
 use Kreait\Firebase\Factory;
 use Illuminate\Bus\Batchable;
 use App\Models\FirebaseProject;
@@ -23,11 +24,15 @@ class SendPasswordResetEmails implements ShouldQueue
      */
     protected $emails;
     protected $projectId;
+    protected $batch_id;
+    public $tries = 3;
 
-    public function __construct(array $emails, string $projectId)
+
+    public function __construct(array $emails, string $projectId, $batch_id)
     {
         $this->emails = $emails;
         $this->projectId = $projectId;
+        $this->batch_id = $batch_id;
     }
 
     /**
@@ -35,6 +40,7 @@ class SendPasswordResetEmails implements ShouldQueue
      */
     public function handle(): void
     {
+        $batch = EmailBatch::find($this->batch_id);
         $project = FirebaseProject::where('project_id', $this->projectId)->first();
         if (!$project) {
             \Log::error("Firebase project {$this->projectId} not found.");
@@ -47,10 +53,15 @@ class SendPasswordResetEmails implements ShouldQueue
         foreach ($this->emails as $email) {
             try {
                 $auth->sendPasswordResetLink($email);
-                usleep(200000);
+                $batch->increment('sent_count');
+                sleep(1);
             } catch (\Throwable $e) {
-                \Log::error("Failed to send reset email to {$email}: " . $e->getMessage());
+                $batch->increment('failed_count');
+                \Log::error("Failed to send to {$email}: " . $e->getMessage());
             }
+        }
+        if ($batch->sent_count + $batch->failed_count >= $batch->total_emails) {
+            $batch->update(['status' => 'completed']);
         }
     }
 }

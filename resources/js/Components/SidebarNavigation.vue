@@ -22,6 +22,7 @@ import {
     Folder,
     LogOutIcon,
     Upload,
+    Mail,
 } from "lucide-vue-next";
 
 const props = defineProps({
@@ -41,6 +42,7 @@ const navItems = [
     },
     { name: "Users", href: "users.index", icon: UsersIcon },
     { name: "Uploads", href: "uploads.index", icon: Upload },
+    { name: "Emails", href: "emails-monitor.index", icon: Mail },
 ];
 </script>
 
