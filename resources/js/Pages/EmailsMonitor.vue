@@ -26,7 +26,6 @@ const props = defineProps({
     batches: Object,
     statusColors: Object,
 });
-console.log(props.statusColors);
 
 const batchesData = ref(props.batches.data);
 const isLoading = ref(false);
@@ -34,7 +33,9 @@ const isLoading = ref(false);
 // Calculate progress for each batch
 const calculateProgress = (batch) => {
     if (!batch.total_emails || batch.total_emails === 0) return 0;
-    return Math.round((batch.sent_count / batch.total_emails) * 100);
+    return Math.round(
+        ((batch.sent_count + batch.failed_count) / batch.total_emails) * 100
+    );
 };
 
 // Refresh data
@@ -117,7 +118,7 @@ watch(
                                 </TableCell>
                                 <TableCell>
                                     <Badge
-                                        :class="`border p-1 ${
+                                        :class="`border p-1  ${
                                             statusColors[batch.status]
                                         }`"
                                     >

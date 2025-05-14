@@ -33,12 +33,6 @@ class FirebaseUserController extends Controller
             }
         } else {
             return null;
-            // $defaultPath = base_path(env('FIREBASE_CREDENTIALS'));
-            // if (!file_exists($defaultPath)) {
-            //     throw new \Exception('Firebase credentials file not found');
-            // }
-
-            // return (new Factory)->withServiceAccount($defaultPath)->createAuth();
         }
     }
 
@@ -47,7 +41,8 @@ class FirebaseUserController extends Controller
         $perPage = 50;
         $page = $request->input('page', 1);
         $projectId = $request->input('project');
-
+        $user = $request->user();
+        $googleAccounts = $user->googleAccounts;
         $projects = auth()->user()->googleAccounts
             ->load('firebaseProjects')
             ->pluck('firebaseProjects')
@@ -60,6 +55,7 @@ class FirebaseUserController extends Controller
         if ($this->auth == null) {
             return Inertia::render('Users', [
                 'users' => [],
+                'googleAccounts' => $googleAccounts,
                 'pagination' => [
                     'total' => 0,
                     'perPage' => 0,
@@ -94,6 +90,7 @@ class FirebaseUserController extends Controller
 
         return Inertia::render('Users', [
             'users' => $users,
+            'googleAccounts' => $googleAccounts,
             'pagination' => [
                 'total' => $totalCount,
                 'perPage' => $perPage,

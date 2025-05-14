@@ -20,6 +20,7 @@ const props = defineProps({
     filters: Object,
     firebaseProjects: Array,
     selectedProjectId: String,
+    googleAccounts: Array,
 });
 
 const page = usePage();
@@ -111,6 +112,7 @@ const refreshUsers = () => {
                 @refreshUsers="refreshUsers"
                 :firebaseProjects="firebaseProjects"
                 :selectedProject="selectedProjectId"
+                :googleAccounts="googleAccounts"
             />
 
             <!-- Loading State -->
