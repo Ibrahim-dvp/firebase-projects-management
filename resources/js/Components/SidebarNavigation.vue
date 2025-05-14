@@ -23,6 +23,8 @@ import {
     LogOutIcon,
     Upload,
     Mail,
+    UserCog,
+    UserCog2,
 } from "lucide-vue-next";
 
 const props = defineProps({
@@ -141,6 +143,25 @@ const navItems = [
                     </p>
                 </div>
             </Link>
+
+            <Link
+                v-if="user.role === 'admin'"
+                :href="route('admin.index')"
+                class="flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground w-full"
+                :class="{
+                    'bg-accent': route().current('admin.index'),
+                    'pl-2.5': isCollapsed,
+                }"
+            >
+                <UserCog
+                    class="h-4 w-4 flex-shrink-0"
+                    :class="{ 'mx-auto': isCollapsed }"
+                />
+                <span v-if="!isCollapsed" class="truncate text-left">
+                    Admin
+                </span>
+            </Link>
+
             <!-- Logout Button -->
             <form
                 @submit.prevent="$inertia.post(route('logout'))"

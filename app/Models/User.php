@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role'
     ];
 
     /**
@@ -50,5 +51,10 @@ class User extends Authenticatable
     public function googleAccounts()
     {
         return $this->hasMany(UserGoogleAccount::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
     }
 }
